@@ -30,6 +30,8 @@ class Client
     bool gameloop = false;
     Header header;
 
+    void MatchMaker();
+
 public:
     Client();
     void Run();
@@ -37,9 +39,7 @@ public:
     void OpenListener();
     void ShowCurrentPlayers();
     void ListenToPlayers();
-    void InitializeSocketSelectorThread();
     void SocketSelectorListener();
-    void GameLoop();
 
     void DisconnectClient();
     void Wait4ServerPacket();

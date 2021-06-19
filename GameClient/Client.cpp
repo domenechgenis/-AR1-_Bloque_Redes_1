@@ -44,6 +44,9 @@ void Client::ConnectToBBS()
 	if (pl_status == sf::Socket::Done) 
 	{
 		std::cout << "Connectado al servidor correctamente... \n";
+
+		//Lobby
+		MatchMaker();
 	}
 	else 
 	{
