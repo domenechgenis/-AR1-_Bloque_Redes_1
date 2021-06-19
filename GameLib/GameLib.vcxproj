@@ -140,11 +140,18 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <Text Include="..\..\..\ConsoleControl.cpp" />
-    <Text Include="ReadMe.txt" />
+    <ClInclude Include="Constants.h" />
+    <ClInclude Include="TcpListener.h" />
+    <ClInclude Include="TcpSocket.h" />
+    <ClInclude Include="TcpSocketSelectorClass.h" />
+    <ClInclude Include="TcpStatusClass.h" />
+    <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="..\..\..\ConsoleControl.h" />
+    <ClCompile Include="TcpListener.cpp" />
+    <ClCompile Include="TcpSocket.cpp" />
+    <ClCompile Include="TcpSocketSelectorClass.cpp" />
+    <ClCompile Include="TcpStatusClass.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
