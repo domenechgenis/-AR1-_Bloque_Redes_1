@@ -13,24 +13,24 @@ void Server::Run()
 	while (running)
 	{
 		// Make the selector wait for data on any socket
-		if (sv_socketselector.wait())
+		if (sv_socketselector.Wait())
 		{
 			// Test the listener
-			if (sv_socketselector.isReady(sv_listener))
+			if (sv_socketselector.isReady(&sv_listener.GetListener()))
 			{
 				// The listener is ready: there is a pending connection
-				sv_socket = new sf::TcpSocket();
+				sv_socket = new TcpSocketClass();
 
-				if (sv_listener.accept(*sv_socket) == sf::Socket::Done)
+				if (sv_listener.Accept(sv_socket->GetSocket()) == sf::Socket::Done)
 				{
-					std::cout << "Connexion recibia del cliente: " << sv_socket->getRemotePort() << std::endl;
+					std::cout << "Connexion recibia del cliente: " << sv_socket->GetRemotePort() << std::endl;
 
 					//Le enviamos la informacion a los jugadores
-					SendPackets(*sv_socket);
+					SendPackets(*sv_socket->GetSocket());
 
 					// Add the new client to the selector so that we will
 					// be notified when he sends something
-					sv_socketselector.add(*sv_socket);
+					sv_socketselector.Add(sv_socket->GetSocket());
 
 					//Add to client server
 					clients.push_back(sv_socket);
@@ -47,19 +47,19 @@ void Server::Run()
 
 void Server::OpenListener()
 {
-	sv_status = sv_listener.listen(DEFAULT_PORT);
+	status.SetStatus(sv_listener.Listen(DEFAULT_PORT,sf::IpAddress::LocalHost));
 
-	if (sv_status != sf::Socket::Done)
+	if (status.GetStatus() != sf::Socket::Done)
 	{
 		std::cout << "Error al abrir listener\n";
 		DisconnectServer();
 	}
-	else {
-
+	else 
+	{
 		running = true;
 
 		//Add listener to selector
-		sv_socketselector.add(sv_listener);
+		sv_socketselector.Add(&sv_listener.GetListener());
 	}
 }
 
@@ -71,6 +71,7 @@ void Server::DisconnectServer()
 	//Free memory
 	delete[] sv_socket;
 
+	//Stop Gameloop
 	running = false;
 }
 
@@ -85,15 +86,17 @@ void Server::SendPackets(sf::TcpSocket& socket)
 	std::string str_port;
 
 	for (auto const& i : clients) {
-		unsigned short port = i->getRemotePort();
+		unsigned short port = i->GetRemotePort();
 		str_port = std::to_string(port);
 		packet << str_port;
 	}
 
 	//When packet its ready, send it to connected user
-	sv_status = socket.send(packet);
+	status.SetStatus(socket.send(packet));
 
-	if (sv_status == sf::Socket::Done) {
+	if (status.GetStatus() == sf::Socket::Done) 
+	{
+		std::cout << "El paquete se ha enviado correctamente\n";
 		packet.clear();
 	}
 	else {

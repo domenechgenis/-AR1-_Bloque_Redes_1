@@ -24,19 +24,20 @@ class Client
     TcpSocketClass* pl_socket;
     TcpListenerClass* pl_listener;
     TcpSocketSelectorClass* pl_socketSelector;
-
-    sf::Socket::Status pl_status;
+    TcpStatusClass * pl_status;
 
     bool gameloop = false;
     Header header;
 
-    void MatchMaker();
-
 public:
     Client();
+    ~Client();
+
     void Run();
-    void ConnectToBBS();
-    void OpenListener();
+
+    bool ConnectToBBS();
+    bool OpenListener();
+
     void ShowCurrentPlayers();
     void ListenToPlayers();
     void SocketSelectorListener();

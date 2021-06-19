@@ -1,7 +1,10 @@
 #pragma once
 
 #include "TcpSocket.h"
+#include "TcpSocketSelectorClass.h"
 #include "TcpListener.h"
+#include "TcpStatusClass.h"
+
 #include "Constants.h"
 #include "Types.h"
 
@@ -11,13 +14,13 @@ class Server
 {
 private:
 	//Data structure
-	std::list<sf::TcpSocket*> clients;
+	std::list<TcpSocketClass*> clients;
 
 	//Utils
-	sf::TcpSocket* sv_socket;
-	sf::TcpListener sv_listener;
-	sf::SocketSelector sv_socketselector;
-	sf::Socket::Status sv_status;
+	TcpSocketClass* sv_socket;
+	TcpListenerClass sv_listener;
+	TcpSocketSelectorClass sv_socketselector;
+	TcpStatusClass status;
 
 	bool running = false;
 	Header header;
@@ -25,7 +28,6 @@ private:
 	void OpenListener();
 	void DisconnectServer();
 	void SendPackets(sf::TcpSocket&);
-
 
 public:
 	Server();

@@ -8,7 +8,6 @@ TcpListenerClass::~TcpListenerClass()
 {
 }
 
-
 sf::TcpListener& TcpListenerClass::GetListener()
 {
     return tcplistener;
