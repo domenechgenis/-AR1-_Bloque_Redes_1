@@ -8,7 +8,7 @@
 class TcpSocketSelectorClass
 {
 private:
-	sf::SocketSelector socketSelector;
+	sf::SocketSelector sv_socketSelector;
 public:
 	//Overloaded functions, accept sockets or listeners from socket selector
 	void Add(sf::TcpSocket*);
