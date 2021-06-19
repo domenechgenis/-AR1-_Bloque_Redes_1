@@ -1,6 +1,8 @@
 #pragma once
 
-const int DEFAULT_PORT = 50000;
+static const std::string LOCAL_HOST = "localhost";
+static const int DEFAULT_PORT = 50000;
+static unsigned const int microsecond = 10000000; //10s
 
 enum Header {
 	MSG_NULL,
