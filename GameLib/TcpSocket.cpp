@@ -12,6 +12,7 @@ TcpSocketClass::TcpSocketClass(sf::TcpSocket*_socket)
 
 TcpSocketClass::~TcpSocketClass()
 {
+    delete[] this->tcpSocket;
 }
 
 sf::TcpSocket* TcpSocketClass::GetSocket()

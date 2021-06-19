@@ -6,15 +6,26 @@ Client::Client()
 	pl_socket = new TcpSocketClass();
 	pl_listener = new TcpListenerClass();
 	pl_socketSelector = new TcpSocketSelectorClass();
+	pl_status = new TcpStatusClass();
 }
+
+Client::~Client()
+{
+	delete[] pl_socket;
+	delete[] pl_listener;
+	delete[] pl_socketSelector;
+	delete[] pl_status;
+}
+
 
 void Client::Run()
 {
 	//Connect player to Port 50.000
-	ConnectToBBS();
-
-	//Open Listener 
-	OpenListener();
+	if (!ConnectToBBS() || !OpenListener()) {
+		std::cout << "El cliente no ha podido conectarse a ningun servidor, cerrando el programa... \n";
+		Sleep(microsecond);
+		return;
+	}
 
 	//Wait4ServerPackets
 	Wait4ServerPacket();
@@ -35,18 +46,16 @@ void Client::Run()
 	}
 }
 
-void Client::ConnectToBBS()
+bool Client::ConnectToBBS()
 {
 	//Nos conectamos al BBS por el puerto 50000
 	std::cout << "\nPlayer inicializado, vas a connectarte al servidor por el puerto:" << DEFAULT_PORT << std::endl;
-	pl_status = pl_socket->Connect(LOCAL_HOST, DEFAULT_PORT, sf::milliseconds(15.f));
+	pl_status->SetStatus(pl_socket->Connect(LOCAL_HOST, DEFAULT_PORT, sf::milliseconds(15.f)));
 
-	if (pl_status == sf::Socket::Done) 
+	if (pl_status->GetStatus() == sf::Socket::Done) 
 	{
 		std::cout << "Connectado al servidor correctamente... \n";
-
-		//Lobby
-		MatchMaker();
+		return true;
 	}
 	else 
 	{
@@ -60,26 +69,27 @@ void Client::ConnectToBBS()
 		}
 		else 
 		{
-			std::cout << "El programa se cerrará en 10s \n";
-			Sleep(microsecond);
-			DisconnectClient();
+			std::cout << "No hay ningun servidor abierto actualmente... \n";
+			return false;
 		}
 	}
 }
 
-void Client::OpenListener()
+bool Client::OpenListener()
 {
 	//Abrimos el listener y lo añadimos al socket selector para posteriormente recibir los paquetes
 	std::cout << "Me dispongo a escuchar por el puerto " << pl_socket->GetRemoteLocalPort() << std::endl;
-	pl_status = pl_listener->Listen(pl_socket->GetRemoteLocalPort(), sf::IpAddress::LocalHost);
+	pl_status->SetStatus(pl_listener->Listen(pl_socket->GetRemoteLocalPort(), sf::IpAddress::LocalHost));
 
-	if (pl_status == sf::Socket::Done)
+	if (pl_status->GetStatus() == sf::Socket::Done)
 	{
 		std::cout << "Listener abierto correctamente\n";
 		pl_socketSelector->Add(&pl_listener->GetListener());
+		return true;
 	}
 	else {
 		std::cout << "Error al abrir el listener\n";
+		return false;
 	}
 }
 
@@ -149,15 +159,15 @@ void Client::SocketSelectorListener()
 				{
 					// The client has sent some data, we can receive it
 					sf::Packet packet;
-					pl_status = client->Recieve(packet);
-					if (pl_status == sf::Socket::Done)
+					pl_status->SetStatus(client->Recieve(packet));
+					if (pl_status->GetStatus() == sf::Socket::Done)
 					{
 						std::string strRec;
 						packet >> strRec;
 						std::cout << "\nHe recibido " << strRec << " del puerto " << client->GetRemotePort() << std::endl;
 						packet.clear();
 					}
-					else if (pl_status == sf::Socket::Disconnected)
+					else if (pl_status->GetStatus() == sf::Socket::Disconnected)
 					{
 						pl_socketSelector->Remove(client->GetSocket());
 						pl_clients.remove(client);
@@ -173,12 +183,6 @@ void Client::SocketSelectorListener()
 	}
 }
 
-void Client::DisconnectClient()
-{
-	gameloop = false;
-	exit(0);
-}
-
 void Client::Wait4ServerPacket()
 {
 	sf::Packet packet;
@@ -186,9 +190,9 @@ void Client::Wait4ServerPacket()
 	std::string numberPlayers;
 	int nPlayers;
 
-	pl_status = pl_socket->Recieve(packet);
+	pl_status->SetStatus(pl_socket->Recieve(packet));
 
-	if (pl_status == sf::Socket::Done) {
+	if (pl_status->GetStatus() == sf::Socket::Done) {
 
 		packet >> numberPlayers;
 		nPlayers = std::stoi(numberPlayers);
@@ -201,9 +205,9 @@ void Client::Wait4ServerPacket()
 
 			//Connecto el puerto que me lleva a un socket;
 			TcpSocketClass* player = new TcpSocketClass();
-			pl_status = player->Connect(pl_socket->GetRemoteAdress(), puerto, sf::milliseconds(15.f));
+			pl_status->SetStatus(player->Connect(pl_socket->GetRemoteAdress(), puerto, sf::milliseconds(15.f)));
 
-			if (pl_status == sf::Socket::Done) {
+			if (pl_status->GetStatus() == sf::Socket::Done) {
 
 				//Add this client to the list because connection its done
 				std::cout << "Me connecto correctamente a " << player->GetRemotePort() << std::endl;
@@ -227,6 +231,7 @@ void Client::Wait4ServerPacket()
 	packet.clear();
 
 }
+
 
 
 

@@ -4,7 +4,6 @@
 class TcpListenerClass
 {
 private:
-	sf::Socket::Status status;
 	sf::TcpListener tcplistener;
 public:
 	TcpListenerClass();
