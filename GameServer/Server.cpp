@@ -74,6 +74,30 @@ void Server::DisconnectServer()
 	running = false;
 }
 
-void Server::SendPackets(sf::TcpSocket&)
+void Server::SendPackets(sf::TcpSocket& socket)
 {
+	//Construir el paquete sin enviarme mis datos a mi mismo ya que ya los tengo, y le envio la informacion de los otros
+	sf::Packet packet;
+	packet << Header::MSG_PEERS;
+
+	std::string numberPlayers = std::to_string(clients.size());
+	packet << numberPlayers;
+
+	std::string str_port;
+
+	for (auto const& i : clients) {
+		unsigned short port = i->getRemotePort();
+		str_port = std::to_string(port);
+		packet << str_port;
+	}
+
+	//When packet its ready, send it to connected user
+	sv_status = socket.send(packet);
+
+	if (sv_status == sf::Socket::Done) {
+		packet.clear();
+	}
+	else {
+		std::cout << "El paquete no se ha podido enviar\n";
+	}
 }
