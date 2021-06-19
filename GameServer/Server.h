@@ -18,9 +18,9 @@ private:
 
 	//Utils
 	TcpSocketClass* sv_socket;
-	TcpListenerClass sv_listener;
-	TcpSocketSelectorClass sv_socketselector;
-	TcpStatusClass status;
+	TcpListenerClass* sv_listener;
+	TcpSocketSelectorClass* sv_socketselector;
+	TcpStatusClass* sv_status;
 
 	bool running = false;
 	Header header;
@@ -31,6 +31,8 @@ private:
 
 public:
 	Server();
+	~Server();
+
 	void Run();
 };
 

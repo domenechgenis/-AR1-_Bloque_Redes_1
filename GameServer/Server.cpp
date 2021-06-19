@@ -2,7 +2,21 @@
 
 Server::Server()
 {
+	//Create memory for Pointers
+	sv_socket = new TcpSocketClass();
+	sv_listener = new TcpListenerClass();
+	sv_socketselector = new TcpSocketSelectorClass();
+	sv_status = new TcpStatusClass();
+
 	std::cout << "Servidor inicializado, vas a escuchar por el puerto:" << DEFAULT_PORT << std::endl;
+}
+
+Server::~Server()
+{
+	delete[] sv_socket;
+	delete[] sv_listener;
+	delete[] sv_socketselector;
+	delete[] sv_status;
 }
 
 void Server::Run()
@@ -13,15 +27,15 @@ void Server::Run()
 	while (running)
 	{
 		// Make the selector wait for data on any socket
-		if (sv_socketselector.Wait())
+		if (sv_socketselector->Wait())
 		{
 			// Test the listener
-			if (sv_socketselector.isReady(&sv_listener.GetListener()))
+			if (sv_socketselector->isReady(&sv_listener->GetListener()))
 			{
 				// The listener is ready: there is a pending connection
 				sv_socket = new TcpSocketClass();
 
-				if (sv_listener.Accept(sv_socket->GetSocket()) == sf::Socket::Done)
+				if (sv_listener->Accept(sv_socket->GetSocket()) == sf::Socket::Done)
 				{
 					std::cout << "Connexion recibia del cliente: " << sv_socket->GetRemotePort() << std::endl;
 
@@ -30,7 +44,7 @@ void Server::Run()
 
 					// Add the new client to the selector so that we will
 					// be notified when he sends something
-					sv_socketselector.Add(sv_socket->GetSocket());
+					sv_socketselector->Add(sv_socket->GetSocket());
 
 					//Add to client server
 					clients.push_back(sv_socket);
@@ -47,19 +61,20 @@ void Server::Run()
 
 void Server::OpenListener()
 {
-	status.SetStatus(sv_listener.Listen(DEFAULT_PORT,sf::IpAddress::LocalHost));
+	sv_status->SetStatus(sv_listener->Listen(DEFAULT_PORT,sf::IpAddress::LocalHost));
 
-	if (status.GetStatus() != sf::Socket::Done)
+	if (sv_status->GetStatus() != sf::Socket::Done)
 	{
-		std::cout << "Error al abrir listener\n";
+		std::cout << "El servidor no se ha podido vincular al servidor\n";
 		DisconnectServer();
 	}
 	else 
 	{
+		std::cout << "El servidor se ha vinculado correctamente al puerto: " << DEFAULT_PORT << std::endl;
 		running = true;
 
 		//Add listener to selector
-		sv_socketselector.Add(&sv_listener.GetListener());
+		sv_socketselector->Add(&sv_listener->GetListener());
 	}
 }
 
@@ -67,9 +82,6 @@ void Server::DisconnectServer()
 {
 	//Info
 	std::cout << "Servidor desconectado, cerrando el servidor... " << std::endl;
-
-	//Free memory
-	delete[] sv_socket;
 
 	//Stop Gameloop
 	running = false;
@@ -92,9 +104,9 @@ void Server::SendPackets(sf::TcpSocket& socket)
 	}
 
 	//When packet its ready, send it to connected user
-	status.SetStatus(socket.send(packet));
+	sv_status->SetStatus(socket.send(packet));
 
-	if (status.GetStatus() == sf::Socket::Done) 
+	if (sv_status->GetStatus() == sf::Socket::Done) 
 	{
 		std::cout << "El paquete se ha enviado correctamente\n";
 		packet.clear();
