@@ -10,18 +10,28 @@ Client::Client()
 
 void Client::Run()
 {
+	//Connect player to Port 50.000
 	ConnectToBBS();
-	OpenListener();
-	Wait4ServerPacket();
-	ShowCurrentPlayers();
-	ListenToPlayers();
 
+	//Open Listener 
+	OpenListener();
+
+	//Wait4ServerPackets
+	Wait4ServerPacket();
+
+	//Listener thread
 	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
 	socketselectorListener.detach();
 
+	ShowCurrentPlayers();
+
+	ListenToPlayers();
+
 	while (gameloop)
 	{
-
+		//Match Start
+		system("cls");
+		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS";
 	}
 }
 
@@ -49,18 +59,15 @@ void Client::ConnectToBBS()
 		{
 			std::cout << "El programa se cerrará en 10s \n";
 			Sleep(microsecond);
+			DisconnectClient();
 		}
-
 	}
-
 }
 
 void Client::OpenListener()
 {
 	//Abrimos el listener y lo añadimos al socket selector para posteriormente recibir los paquetes
-
 	std::cout << "Me dispongo a escuchar por el puerto " << pl_socket->GetRemoteLocalPort() << std::endl;
-
 	pl_status = pl_listener->Listen(pl_socket->GetRemoteLocalPort(), sf::IpAddress::LocalHost);
 
 	if (pl_status == sf::Socket::Done)
@@ -69,41 +76,8 @@ void Client::OpenListener()
 		pl_socketSelector->Add(&pl_listener->GetListener());
 	}
 	else {
-		std::cout << "Error al abrir listener del player\n";
-		std::string rentry;
-		std::cout << "Quieres volver a intentarlo? (y = si) \n";
-		std::cin >> rentry;
-		if (rentry == "y") {
-			OpenListener();
-		}
-		else {
-			std::cout << "El programa se cerrará en 10s \n";
-			Sleep(microsecond);
-			exit(0);
-		}
-
+		std::cout << "Error al abrir el listener\n";
 	}
-}
-
-void Client::Wait4ServerPacket()
-{
-	sf::Packet packet;
-	std::string str_port;
-
-	// esperamos a recibir el packet
-
-	pl_status = pl_socket->Recieve(packet);
-
-	if (pl_status == sf::Socket::Done) 
-	{
-
-
-	}
-	else {
-		std::cout << "Nadie me envia nada" << std::endl;
-	}
-	packet.clear();
-
 }
 
 void Client::ShowCurrentPlayers()
@@ -120,17 +94,12 @@ void Client::ShowCurrentPlayers()
 
 void Client::ListenToPlayers()
 {
-
 	//Mientras no haya 3 jugadores el jugador espera escuchando alguna conexion de los otros players
-
 	while (pl_clients.size() < 3) {
-
 		if (pl_socketSelector->Wait())
 		{
-
 			if (pl_socketSelector->isReady(&pl_listener->GetListener()))
 			{
-
 				TcpSocketClass* player = new TcpSocketClass();
 
 				if (pl_listener->Accept(player->GetSocket()) == sf::Socket::Done)
@@ -160,13 +129,14 @@ void Client::ListenToPlayers()
 			exit(0);
 		}
 	}
-}
 
+
+	gameloop = true;
+}
 
 void Client::SocketSelectorListener()
 {
-	//Aqui sera donde tendrán que ir los headers !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-	while (true)
+	while (gameloop)
 	{
 		for (TcpSocketClass* client : pl_clients)
 		{
@@ -181,14 +151,7 @@ void Client::SocketSelectorListener()
 					{
 						std::string strRec;
 						packet >> strRec;
-
 						std::cout << "\nHe recibido " << strRec << " del puerto " << client->GetRemotePort() << std::endl;
-
-						if (std::stoi(strRec) == 4) {
-
-							std::cout << "\nHe recibido un paquete especial, el del orden de la partida" << std::endl;
-						}
-
 						packet.clear();
 					}
 					else if (pl_status == sf::Socket::Disconnected)
@@ -205,6 +168,61 @@ void Client::SocketSelectorListener()
 			}
 		}
 	}
+}
+
+void Client::DisconnectClient()
+{
+	gameloop = false;
+	exit(0);
+}
+
+void Client::Wait4ServerPacket()
+{
+	sf::Packet packet;
+	std::string str_port;
+	std::string numberPlayers;
+	int nPlayers;
+
+	pl_status = pl_socket->Recieve(packet);
+
+	if (pl_status == sf::Socket::Done) {
+
+		packet >> numberPlayers;
+		nPlayers = std::stoi(numberPlayers);
+
+		//Recibo cuantos players hay antes que yo
+		for (size_t i = 0; i < nPlayers; i++)
+		{
+			packet >> str_port;
+			int puerto = std::stoi(str_port);
+
+			//Connecto el puerto que me lleva a un socket;
+			TcpSocketClass* player = new TcpSocketClass();
+			pl_status = player->Connect(pl_socket->GetRemoteAdress(), puerto, sf::milliseconds(15.f));
+
+			if (pl_status == sf::Socket::Done) {
+
+				//Add this client to the list because connection its done
+				std::cout << "Me connecto correctamente a " << player->GetRemotePort() << std::endl;
+				pl_clients.push_back(player);
+				pl_socketSelector->Add(player->GetSocket());
+
+			}
+			else {
+				std::cout << "Error al connectar el jugador a la partida";
+				delete player;
+				Sleep(microsecond);
+				exit(0);
+
+			}
+		}
+
+	}
+	else {
+		std::cout << "Nadie me envia nada" << std::endl;
+	}
+	packet.clear();
+
 }
 
 

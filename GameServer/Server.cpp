@@ -78,7 +78,6 @@ void Server::SendPackets(sf::TcpSocket& socket)
 {
 	//Construir el paquete sin enviarme mis datos a mi mismo ya que ya los tengo, y le envio la informacion de los otros
 	sf::Packet packet;
-	packet << Header::MSG_PEERS;
 
 	std::string numberPlayers = std::to_string(clients.size());
 	packet << numberPlayers;

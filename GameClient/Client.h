@@ -28,13 +28,13 @@ class Client
     sf::Socket::Status pl_status;
 
     bool gameloop = false;
+    Header header;
 
 public:
     Client();
     void Run();
     void ConnectToBBS();
     void OpenListener();
-    void Wait4ServerPacket();
     void ShowCurrentPlayers();
     void ListenToPlayers();
     void InitializeSocketSelectorThread();
@@ -42,4 +42,5 @@ public:
     void GameLoop();
 
     void DisconnectClient();
+    void Wait4ServerPacket();
 };

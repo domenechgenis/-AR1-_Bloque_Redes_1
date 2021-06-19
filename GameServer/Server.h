@@ -20,6 +20,7 @@ private:
 	sf::Socket::Status sv_status;
 
 	bool running = false;
+	Header header;
 
 	void OpenListener();
 	void DisconnectServer();
