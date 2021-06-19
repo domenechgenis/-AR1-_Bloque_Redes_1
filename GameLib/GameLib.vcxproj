@@ -140,7 +140,11 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <Text Include="..\..\..\ConsoleControl.cpp" />
     <Text Include="ReadMe.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="..\..\..\ConsoleControl.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
