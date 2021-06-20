@@ -34,7 +34,7 @@ struct Deck {
 		std::cout << "Actual deck:" << std::endl;
 		for (size_t i = 0; i < deck.size(); i++)
 		{
-			std::cout << Card::ToString(deck.at(i)->culture)<<"  "<< Card::ToString(deck.at(i)->type) << std::endl;
+			std::cout << Card::ToString(deck.at(i)->culture)<<"  "<< Card::ToString(deck.at(i)->type) <<"  "<< deck.at(i)->id << std::endl;
 		}
 		
 	}

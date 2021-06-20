@@ -49,7 +49,7 @@ void Client::Run()
 	else {
 		for (auto const& i : pl_clients) {
 			if (i->GetID() == 0) {
-				seed = i->GetRemoteLocalPort();
+				seed = i->GetRemotePort();
 				deck.ShuffleDeck(seed);
 				break;
 			}
@@ -64,7 +64,7 @@ void Client::Run()
 		
 		std::cout << seed;
 
-		//deck.PrintActualDeck();
+		deck.PrintActualDeck();
 
 		Sleep(microsecond*100);
 		//
