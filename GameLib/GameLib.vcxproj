@@ -140,7 +140,10 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="Cards.h" />
     <ClInclude Include="Constants.h" />
+    <ClInclude Include="Deck.h" />
+    <ClInclude Include="Hand.h" />
     <ClInclude Include="TcpListener.h" />
     <ClInclude Include="TcpSocket.h" />
     <ClInclude Include="TcpSocketSelectorClass.h" />

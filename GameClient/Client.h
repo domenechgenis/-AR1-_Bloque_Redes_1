@@ -14,7 +14,7 @@
 
 #include "Constants.h"
 #include "Types.h"
-
+#include "Deck.h"
 class Client
 {
     std::list<TcpSocketClass*> pl_clients;

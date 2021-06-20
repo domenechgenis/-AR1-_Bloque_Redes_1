@@ -38,11 +38,21 @@ void Client::Run()
 
 	ListenToPlayers();
 
+	Deck deck;
+
+	deck = Deck();
+	
+
+	//deck.ShuffleDeck();
 	while (gameloop)
 	{
 		//Match Start
 		system("cls");
 		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS";
+
+		//
+
+
 	}
 }
 
