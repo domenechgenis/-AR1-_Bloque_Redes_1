@@ -77,8 +77,3 @@ struct Card {
 		id = (int)culture * MAX_CULTURE + (int)type;
 	};
 };
-bool operator== (const Card& a, const Card& b)
-{
-	return (a.culture == b.culture &&
-		a.type == b.type);
-}

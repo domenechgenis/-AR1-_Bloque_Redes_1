@@ -40,7 +40,7 @@ void Server::Run()
 					std::cout << "Connexion recibia del cliente: " << sv_socket->GetRemotePort() << std::endl;
 
 					//Le enviamos la informacion a los jugadores
-					SendPackets(*sv_socket->GetSocket());
+					
 
 					// Add the new client to the selector so that we will
 					// be notified when he sends something
@@ -48,6 +48,8 @@ void Server::Run()
 
 					//Add to client server
 					clients.push_back(sv_socket);
+
+					SendPackets(*sv_socket->GetSocket());
 				}
 				else {
 					delete sv_socket;

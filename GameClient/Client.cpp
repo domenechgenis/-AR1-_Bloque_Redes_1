@@ -52,7 +52,6 @@ void Client::Run()
 
 		//
 
-
 	}
 }
 
@@ -118,7 +117,7 @@ void Client::ShowCurrentPlayers()
 void Client::ListenToPlayers()
 {
 	//Mientras no haya 3 jugadores el jugador espera escuchando alguna conexion de los otros players
-	while (pl_clients.size() < 3) {
+	while (pl_clients.size() < 4) {
 		if (pl_socketSelector->Wait())
 		{
 			if (pl_socketSelector->isReady(&pl_listener->GetListener()))
@@ -207,7 +206,7 @@ void Client::Wait4ServerPacket()
 		packet >> numberPlayers;
 		nPlayers = std::stoi(numberPlayers);
 
-		//Recibo cuantos players hay antes que yo
+		//Recibo cuantos players hay incluido yo
 		for (size_t i = 0; i < nPlayers; i++)
 		{
 			packet >> str_port;
