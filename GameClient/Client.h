@@ -28,8 +28,11 @@ class Client
     TcpListenerClass* pl_listener;
     TcpSocketSelectorClass* pl_socketSelector;
     TcpStatusClass * pl_status;
+    Deck* deck;
 
     bool gameloop = false;
+    int seed;
+
     Header header;
 
 public:
@@ -43,8 +46,13 @@ public:
 
     void ShowCurrentPlayers();
     void ListenToPlayers();
-    void SocketSelectorListener();
 
-    void DisconnectClient();
+    void HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client);
+
     void Wait4ServerPacket();
+    void AssignDeck();
+
+    //Threads
+    void SocketSelectorListener();
+    void BoostrapServerListener();
 };

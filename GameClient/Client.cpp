@@ -34,41 +34,24 @@ void Client::Run()
 	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
 	socketselectorListener.detach();
 
+	std::thread boostrapServerListener(&Client::BoostrapServerListener, this);
+	boostrapServerListener.detach();
+
 	ShowCurrentPlayers();
 
+	//Listen to players connected
 	ListenToPlayers();
 
-	Deck deck;
+	//Assign deck to player
+	AssignDeck();
 
-	deck = Deck();
-	int seed;
-	if (id==0) {
-		seed = pl_socket->GetRemoteLocalPort();
-		deck.ShuffleDeck(seed);
-	}
-	else {
-		for (auto const& i : pl_clients) {
-			if (i->GetID() == 0) {
-				seed = i->GetRemotePort();
-				deck.ShuffleDeck(seed);
-				break;
-			}
-		}
-	}
-	
 	while (gameloop)
 	{
 		//Match Start
 		system("cls");
-		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS"<<std::endl;
-		
-		std::cout << seed;
+		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS" << std::endl; 
 
-		deck.PrintActualDeck();
-
-		Sleep(microsecond*100);
-		//
-
+		Sleep(microsecond);
 	}
 }
 
@@ -134,7 +117,8 @@ void Client::ShowCurrentPlayers()
 void Client::ListenToPlayers()
 {
 	//Mientras no haya 3 jugadores el jugador espera escuchando alguna conexion de los otros players
-	while (pl_clients.size() < 3) {
+	while (pl_clients.size() < 3) 
+	{
 		if (pl_socketSelector->Wait())
 		{
 			if (pl_socketSelector->isReady(&pl_listener->GetListener()))
@@ -186,12 +170,10 @@ void Client::SocketSelectorListener()
 					// The client has sent some data, we can receive it
 					sf::Packet packet;
 					pl_status->SetStatus(client->Recieve(packet));
+
 					if (pl_status->GetStatus() == sf::Socket::Done)
 					{
-						std::string strRec;
-						packet >> strRec;
-						std::cout << "\nHe recibido " << strRec << " del puerto " << client->GetRemotePort() << std::endl;
-						packet.clear();
+						HandlePacketReciever(packet, client);
 					}
 					else if (pl_status->GetStatus() == sf::Socket::Disconnected)
 					{
@@ -207,6 +189,40 @@ void Client::SocketSelectorListener()
 			}
 		}
 	}
+}
+
+void Client::BoostrapServerListener()
+{
+	while (gameloop)
+	{
+
+	}
+}
+
+void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
+{
+	std::cout << "Estoy recibiendo un paquete del Cliente: " << client->GetRemotePort() << std::endl;
+	int header_int;
+
+	packet >> header_int;
+	header = Header(header_int);
+
+	switch (header)
+	{
+	case MSG_NULL:
+		break;
+	case MSG_OK:
+		break;
+	case MSG_KO:
+		break;
+	case MSG_PEERS:
+		break;
+	default:
+		break;
+	}
+
+
+	packet.clear();
 }
 
 void Client::Wait4ServerPacket()
@@ -262,6 +278,30 @@ void Client::Wait4ServerPacket()
 	packet.clear();
 
 }
+
+void Client::AssignDeck()
+{
+	deck = new Deck();
+
+	if (id == 0) 
+	{
+		seed = pl_socket->GetRemoteLocalPort();
+		deck->ShuffleDeck(seed);
+	}
+	else
+	{
+		for (auto const& i : pl_clients) 
+		{
+			if (i->GetID() == 0)
+			{
+				seed = i->GetRemotePort();
+				deck->ShuffleDeck(seed);
+				break;
+			}
+		}
+	}
+}
+
 
 
 

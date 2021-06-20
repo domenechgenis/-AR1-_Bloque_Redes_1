@@ -7,8 +7,6 @@ Server::Server()
 	sv_listener = new TcpListenerClass();
 	sv_socketselector = new TcpSocketSelectorClass();
 	sv_status = new TcpStatusClass();
-
-	std::cout << "Servidor inicializado, vas a escuchar por el puerto:" << DEFAULT_PORT << std::endl;
 }
 
 Server::~Server()
@@ -21,6 +19,8 @@ Server::~Server()
 
 void Server::Run()
 {
+	std::cout << "Servidor inicializado, vas a escuchar por el puerto:" << DEFAULT_PORT << std::endl;
+
 	//Open Listener to the default port
 	OpenListener();
 
@@ -46,7 +46,7 @@ void Server::Run()
 					sv_socketselector->Add(sv_socket->GetSocket());
 
 					//Add to client server
-					clients.push_back(sv_socket);
+					sv_clients.push_back(sv_socket);
 
 					
 				}
@@ -84,6 +84,13 @@ void Server::DisconnectServer()
 	//Info
 	std::cout << "Servidor desconectado, cerrando el servidor... " << std::endl;
 
+	//Disconnect sockets
+	for (auto const& i : sv_clients) 
+	{
+		i->Disconnect();
+	}
+	this->sv_clients.clear();
+
 	//Stop Gameloop
 	running = false;
 }
@@ -93,12 +100,12 @@ void Server::SendPackets(sf::TcpSocket& socket)
 	//Construir el paquete sin enviarme mis datos a mi mismo ya que ya los tengo, y le envio la informacion de los otros
 	sf::Packet packet;
 
-	std::string numberPlayers = std::to_string(clients.size());
+	std::string numberPlayers = std::to_string(sv_clients.size());
 	packet << numberPlayers;
 
 	std::string str_port;
 
-	for (auto const& i : clients) {
+	for (auto const& i : sv_clients) {
 		unsigned short port = i->GetRemotePort();
 		str_port = std::to_string(port);
 		packet << str_port;

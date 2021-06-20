@@ -14,7 +14,7 @@ class Server
 {
 private:
 	//Data structure
-	std::list<TcpSocketClass*> clients;
+	std::list<TcpSocketClass*> sv_clients;
 
 	//Utils
 	TcpSocketClass* sv_socket;
