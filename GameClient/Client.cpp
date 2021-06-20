@@ -41,15 +41,32 @@ void Client::Run()
 	Deck deck;
 
 	deck = Deck();
+	int seed;
+	if (id==0) {
+		seed = pl_socket->GetRemoteLocalPort();
+		deck.ShuffleDeck(seed);
+	}
+	else {
+		for (auto const& i : pl_clients) {
+			if (i->GetID() == 0) {
+				seed = i->GetRemoteLocalPort();
+				deck.ShuffleDeck(seed);
+				break;
+			}
+		}
+	}
 	
-
-	//deck.ShuffleDeck();
 	while (gameloop)
 	{
 		//Match Start
 		system("cls");
-		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS";
+		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS"<<std::endl;
+		
+		std::cout << seed;
 
+		//deck.PrintActualDeck();
+
+		Sleep(microsecond*100);
 		//
 
 	}
@@ -117,7 +134,7 @@ void Client::ShowCurrentPlayers()
 void Client::ListenToPlayers()
 {
 	//Mientras no haya 3 jugadores el jugador espera escuchando alguna conexion de los otros players
-	while (pl_clients.size() < 4) {
+	while (pl_clients.size() < 3) {
 		if (pl_socketSelector->Wait())
 		{
 			if (pl_socketSelector->isReady(&pl_listener->GetListener()))
@@ -212,27 +229,32 @@ void Client::Wait4ServerPacket()
 			packet >> str_port;
 			int puerto = std::stoi(str_port);
 
-			//Connecto el puerto que me lleva a un socket;
-			TcpSocketClass* player = new TcpSocketClass();
-			pl_status->SetStatus(player->Connect(pl_socket->GetRemoteAdress(), puerto, sf::milliseconds(15.f)));
+		
 
-			if (pl_status->GetStatus() == sf::Socket::Done) {
+				//Connecto el puerto que me lleva a un socket;
+				TcpSocketClass* player = new TcpSocketClass();
+				pl_status->SetStatus(player->Connect(pl_socket->GetRemoteAdress(), puerto, sf::milliseconds(15.f)));
+				
+				if (pl_status->GetStatus() == sf::Socket::Done) {
 
-				//Add this client to the list because connection its done
-				std::cout << "Me connecto correctamente a " << player->GetRemotePort() << std::endl;
-				pl_clients.push_back(player);
-				pl_socketSelector->Add(player->GetSocket());
+					//Add this client to the list because connection its done
+					std::cout << "Me connecto correctamente a " << player->GetRemotePort() << std::endl;
+					player->SetID(i);
+					pl_clients.push_back(player);
+					pl_socketSelector->Add(player->GetSocket());
 
-			}
-			else {
-				std::cout << "Error al connectar el jugador a la partida";
-				delete player;
-				Sleep(microsecond);
-				exit(0);
+				}
+				else {
+					std::cout << "Error al connectar el jugador a la partida";
+					delete player;
+					Sleep(microsecond);
+					exit(0);
 
-			}
+				}
+
+			
 		}
-
+		id = nPlayers;
 	}
 	else {
 		std::cout << "Nadie me envia nada" << std::endl;

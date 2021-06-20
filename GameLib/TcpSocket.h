@@ -6,6 +6,7 @@
 class TcpSocketClass
 {
 	sf::TcpSocket *tcpSocket;
+	int id;
 public:
 	TcpSocketClass();
 	TcpSocketClass(sf::TcpSocket*);
@@ -14,6 +15,8 @@ public:
 	sf::TcpSocket* GetSocket();
 	void SetSocket(sf::TcpSocket*);
 
+	void SetID(int);
+	int GetID();
 	sf::IpAddress GetRemoteIp();
 	std::string GetRemoteAdress();
 

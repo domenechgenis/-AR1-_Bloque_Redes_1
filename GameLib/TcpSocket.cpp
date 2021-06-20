@@ -10,6 +10,7 @@ TcpSocketClass::TcpSocketClass(sf::TcpSocket*_socket)
     _socket = new sf::TcpSocket;
 }
 
+
 TcpSocketClass::~TcpSocketClass()
 {
     delete[] this->tcpSocket;
@@ -64,4 +65,15 @@ sf::Socket::Status TcpSocketClass::Send(sf::Packet &packet)
 sf::Socket::Status TcpSocketClass::Recieve(sf::Packet &packet)
 {
     return tcpSocket->receive(packet);
+}
+
+void TcpSocketClass::SetID(int _id) {
+
+    id = _id;
+
+}
+int TcpSocketClass::GetID() {
+
+    return id;
+
 }
