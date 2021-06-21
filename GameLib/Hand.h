@@ -11,84 +11,97 @@ struct Hand {
 	//Cuantas cartas de cada categoria tenemos
 	std::map<int, int> categoriesAmountCards;
 	//Tenemos actualmente la carta en la mano o no 
-	std::map<Card, bool> hand;
+	std::vector<Card> hand; // SINO CAMBIAR POR VECTOR ES LO MAS VIBLE SI NO FUNCIONA 
 
 
 	Hand() {
 		for (int i = 0; i < MAX_CULTURE; i++)
 		{
 			categoriesAmountCards[i] = 0;
-		}
-		
+		}	
 	}
 
 	//Comprobamos si 
 	
 	bool hasCard(Card _card) {
-		return hand[_card];
+		for (auto i : hand) {
+
+			if (i == _card) {
+				return true;
+			}
+		}
+		return false;
 	}
 	void PrintHand() {
 		int cont=0;
 		for (auto i : hand) {
 			
-			std::cout << Card::ToString(i.first.culture)<<"------"<< Card::ToString(i.first.type)<< std::endl;
+			std::cout << Card::ToString(i.culture)<<"------"<< Card::ToString(i.type)<< std::endl;
 			cont++;
 		}
-		std::cout << "Tamaño de la mano :"<<hand.size()<<std::endl;
 
 	}
+
 
 	bool cultureCompleted(Card::Culture _cult) {
 
 		int auxCount = 0;
-		for (std::map<Card, bool>::iterator it = hand.begin(); it != hand.end(); ++it) {
-			if (it->second) {
-				if (it->first.culture == _cult) {
-					auxCount++;
-					if (auxCount == MAX_TYPE) {
-						return true;
-					}
+		for (auto i : hand) {
+
+			if (i.culture == _cult) {
+				auxCount++;
+				if (auxCount == MAX_TYPE) {
+					return true;
 				}
+
 			}
+
 		}
+	
 		return false;
 	}
+
 
 	void removeCard(Card _card) {
 		//Desactivamos la carta de la mano 
 		
+
 		categoriesAmountCards[(int)_card.culture]--;
-		hand[_card] = false;
+		for (size_t i = 0; i < hand.size();i++) {
+
+			if (hand[i] == _card) {
+				hand.erase(hand.begin() + i);
+			}
+		}
 		numCards--;
 		if (numCards <= 0)
 		{
 			inGame = false;
 		}
-		std::cout << "/////////////////////////////////////////////////////////////////////////"<< std::endl;
+		std::cout << "///////////////////////BORRACIÓN////////////////////////////"<< std::endl;
 	}
 
 	void addCard(Card _card) {
 
-		hand.insert(hand.begin(),std::pair<Card, bool>(_card, true));
-		std::cout << hand.size();
+		
+		hand.push_back(_card);
+	
 		categoriesAmountCards[(int)_card.culture]++;
 		//hand[_card] = true;
 		numCards++;
-		std::cout << Card::ToString(_card.culture)<<"********" <<Card::ToString(_card.type)<< std::endl;
 		
 		//comprobamos si tenemos todos los componentes de una cultura
 		if (cultureCompleted(_card.culture))
 		{
-			
 			//Se suman los puntos y borramos estas cartas de la mano
 			points++;
-			for (std::map<Card, bool>::iterator it = hand.begin(); it != hand.end(); ++it) {
-				if (it->second) {
-					if (it->first.culture == _card.culture) {
-						removeCard(it->first);
-					}
+			for (auto i : hand) {
+
+				if (i.culture == _card.culture) {
+					removeCard(_card);
 				}
 			}
+			
 		}
 	}
 };

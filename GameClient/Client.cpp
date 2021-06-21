@@ -70,7 +70,7 @@ void Client::Run()
 	{
 		//Match Start
 		
-		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS" << deck->deck.size() << hands[0]->hand.size()<< std::endl;
+		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS" << std::endl;
 		
 		Sleep(microsecond);
 	}
@@ -330,7 +330,7 @@ void Client::AsignHandsAndTurn()
 	{
 		hands[i] = new Hand();
 		hands[i]->inGame = true;
-		//Asignamos aqui el turno
+		//Asignamos aqui el turno correctamente 
 		hands[i]->playerTurn = 0;
 	}
 }
@@ -340,12 +340,8 @@ void Client::DealCards()
 	
 	for (int i = 0; i < deck->deck.size(); i++)
 	{
-
 		if (i <= 10) {
-
-			hands[0]->addCard(*deck->deck[i]);
-			std::cout << hands[0]->categoriesAmountCards.size() << std::endl;
-			
+			hands[0]->addCard(*deck->deck[i]);	
 		}
 		else if (i>10 && i<=20) {
 
