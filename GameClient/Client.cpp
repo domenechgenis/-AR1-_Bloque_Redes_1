@@ -43,14 +43,35 @@ void Client::Run()
 	ListenToPlayers();
 
 	//Assign deck to player
+	system("cls");
 	AssignDeck();
+
+	
+	AsignHandsAndTurn();
+	DealCards();
+	
+	std::cout << "Mi mano es" << id << std::endl;
+	std::cout << "Cantidad de cartas : "<< hands[id]->numCards<< std::endl;
+	hands[id]->PrintHand();
+	std::cout <<"--------------------------------------------------"<< std::endl;
+
+	std::cout << "Manos de los otros : "<< std::endl;
+	for (int i = 0; i < 4; i++) {
+		if (i != id) {
+			std::cout << "Cantidad de cartas : " << hands[i]->numCards << std::endl;
+			std::cout << "La mano del jugador  " << i << " es:" << std::endl;
+			hands[i]->PrintHand();
+		}
+		
+	}
+	
 
 	while (gameloop)
 	{
 		//Match Start
-		system("cls");
-		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS" << std::endl; 
-
+		
+		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS" << deck->deck.size() << hands[0]->hand.size()<< std::endl;
+		
 		Sleep(microsecond);
 	}
 }
@@ -301,6 +322,46 @@ void Client::AssignDeck()
 		}
 	}
 }
+
+void Client::AsignHandsAndTurn()
+{
+
+	for (size_t i = 0; i < 4; i++)
+	{
+		hands[i] = new Hand();
+		hands[i]->inGame = true;
+		//Asignamos aqui el turno
+		hands[i]->playerTurn = 0;
+	}
+}
+
+void Client::DealCards()
+{
+	
+	for (int i = 0; i < deck->deck.size(); i++)
+	{
+
+		if (i <= 10) {
+
+			hands[0]->addCard(*deck->deck[i]);
+			std::cout << hands[0]->categoriesAmountCards.size() << std::endl;
+			
+		}
+		else if (i>10 && i<=20) {
+
+			hands[1]->addCard(*deck->deck[i]);
+		}
+		else if (i > 20 && i <= 30) {
+			hands[2]->addCard(*deck->deck[i]);
+		}
+		else {
+			hands[3]->addCard(*deck->deck[i]);
+		}
+		
+	}
+	
+}
+
 
 
 

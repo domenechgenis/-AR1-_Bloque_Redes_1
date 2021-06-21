@@ -5,6 +5,7 @@
 #include <thread>
 #include <queue>
 #include <list>
+#include <map>
 #include <windows.h>
 
 #include "TcpSocket.h"
@@ -15,6 +16,7 @@
 #include "Constants.h"
 #include "Types.h"
 #include "Deck.h"
+#include "Hand.h"
 
 class Client
 {
@@ -28,7 +30,8 @@ class Client
     TcpListenerClass* pl_listener;
     TcpSocketSelectorClass* pl_socketSelector;
     TcpStatusClass * pl_status;
-    Deck* deck;
+    Deck *deck;
+    std::map<int, Hand*> hands;
 
     bool gameloop = false;
     int seed;
@@ -51,7 +54,8 @@ public:
 
     void Wait4ServerPacket();
     void AssignDeck();
-
+    void DealCards();
+    void AsignHandsAndTurn();
     //Threads
     void SocketSelectorListener();
     void BoostrapServerListener();

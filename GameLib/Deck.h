@@ -6,6 +6,7 @@
 #include <map>
 #include "iostream"
 #include "Cards.h"
+#include "Hand.h"
 
 struct Deck {
 

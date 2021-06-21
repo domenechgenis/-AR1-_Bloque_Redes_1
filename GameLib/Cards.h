@@ -76,4 +76,30 @@ struct Card {
 
 		id = (int)culture * MAX_CULTURE + (int)type;
 	};
+
+
 };
+//Si no ponemos inline nos peta
+inline bool operator== (const Card& a, const Card& b)
+{
+	return (a.culture == b.culture && a.type == b.type);
+}
+inline bool operator< (const Card& a, const Card& b)
+{
+	return ((int)a.culture * MAX_CULTURE + (int)a.type) < ((int)b.culture *MAX_TYPE + (int)b.type);
+}
+inline bool operator> (const Card& a, const Card& b)
+{
+	return ((int)a.culture * MAX_CULTURE + (int)a.type) > ((int)b.culture * MAX_TYPE + (int)b.type);
+}inline bool operator<= (const Card& a, const Card& b)
+{
+	return ((int)a.culture * MAX_CULTURE + (int)a.type) < ((int)b.culture *MAX_TYPE + (int)b.type) || (a == b);
+}
+inline bool operator>= (const Card& a, const Card& b)
+{
+	return ((int)a.culture * MAX_CULTURE + (int)a.type) > ((int)b.culture * MAX_TYPE + (int)b.type) || (a == b);
+}
+inline bool operator!= (const Card& a, const Card& b)
+{
+	return !(a == b);
+}
