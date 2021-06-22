@@ -60,6 +60,8 @@ public:
     void HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client);
     void HandleRdyReciever(sf::Packet& packet, TcpSocketClass* client);
 
+    void HandlePlayerTurn();
+
     //Utils
     std::string HeaderToString(HEADER_MSG);
 

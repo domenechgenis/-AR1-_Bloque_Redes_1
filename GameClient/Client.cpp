@@ -75,34 +75,7 @@ void Client::Run()
 
 		while (gamestarded)
 		{
-			system("cls");
-			if (id == hands[0]->playerTurn)
-			{
-				std::cout << "ES MI TURNO" << std::endl;
-				sf::Packet packet;
-
-				for (auto const& i : pl_clients)
-				{
-					//When packet its ready, send it to connected user
-					packet << HEADER_MSG::MSG_TURN;
-					pl_status->SetStatus(i->Send(packet));
-
-					if (pl_status->GetStatus() == sf::Socket::Done)
-					{
-						std::cout << "El paquete se ha enviado correctamente\n";
-						packet.clear();
-					}
-					else {
-						std::cout << "El paquete no se ha podido enviar\n";
-					}
-				}
-			}
-			else
-			{
-				std::cout << "NO ES MI TURNO" << std::endl;
-			}
-
-			Sleep(100000);
+			HandlePlayerTurn();
 		}
 	}
 }
@@ -286,6 +259,32 @@ void Client::CheckPlayersRdy()
 			std::cout << "----------------------------------------------------------" << std::endl;
 
 			gamestarded = true;
+
+			//Send Respective turns to each player
+			if (id == hands[0]->playerTurn)
+			{
+				sf::Packet packet;
+				for (auto const& i : pl_clients)
+				{
+					//When packet its ready, send it to connected user
+					packet << HEADER_MSG::MSG_TURN;
+					pl_status->SetStatus(i->Send(packet));
+
+					if (pl_status->GetStatus() == sf::Socket::Done)
+					{
+						std::cout << "El paquete se ha enviado correctamente\n";
+						packet.clear();
+					}
+					else
+					{
+						std::cout << "El paquete no se ha podido enviar\n";
+					}
+				}
+			}
+			else
+			{
+				std::cout << "NO ES MI TURNO" << std::endl;
+			}
 		}
 
 		std::cout << "----------------------------------------------------------" << std::endl;
@@ -336,6 +335,33 @@ void Client::HandleRdyReciever(sf::Packet& packet, TcpSocketClass* client)
 			i->SetRdy(true);
 		}
 	}
+}
+
+void Client::HandlePlayerTurn() 
+{
+	std::string msg;
+
+	clientsSemaphore.lock();
+	if (id == hands[0]->playerTurn)
+	{
+		std::cout << "Esta es tu mano actual:" << std::endl;
+		std::cout << "--------------------------------------------------" << std::endl;
+
+		hands[id]->PrintHand();
+		std::cout << "--------------------------------------------------" << std::endl;
+
+		std::cout << "Es tu turno, que quieres hacer: Pedir carta (p), o hablar por el Chat (p): ";
+		std::cin >> msg;
+	}
+	else
+	{
+		std::cout << "Esta es tu mano actual:" << std::endl;
+		std::cout << "--------------------------------------------------" << std::endl;
+
+		hands[id]->PrintHand();
+		std::cout << "NO es tu turno, esperando a que te toque" << std::endl;
+	}
+	clientsSemaphore.unlock();
 }
 
 void Client::Wait4ServerPacket()
