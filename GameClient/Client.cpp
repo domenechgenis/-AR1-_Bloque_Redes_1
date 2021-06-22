@@ -17,7 +17,6 @@ Client::~Client()
 	delete[] pl_status;
 }
 
-
 void Client::Run()
 {
 	//Connect player to Port 50.000
@@ -50,9 +49,6 @@ void Client::Run()
 	std::thread boostrapServerListener(&Client::BoostrapServerListener, this);
 	boostrapServerListener.detach();
 
-	std::thread checkPlayersRdyListener(&Client::CheckPlayersRdy, this);
-	checkPlayersRdyListener.detach();
-
 	std::cout << "Mi mano es" << id << std::endl;
 	std::cout << "Cantidad de cartas : "<< hands[id]->numCards<< std::endl;
 	hands[id]->PrintHand();
@@ -70,39 +66,41 @@ void Client::Run()
 	}
 
 	system("cls");
+	//Match Start
+	std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS ESPERANDO A QUE ESTEN LISTOS" << std::endl;
 
 	while (gameloop)
 	{
-		//Match Start
-		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS" << std::endl;
+		Wait4Rdy();
 
-		if (id == hands[0]->playerTurn) 
+		while (gamestarded)
 		{
-			std::cout << "ES MI TURNO" << std::endl;
-			sf::Packet packet;
-
-			for (auto const& i : pl_clients)
+			if (id == hands[0]->playerTurn)
 			{
-				//When packet its ready, send it to connected user
-				packet << HEADER_MSG::MSG_TURN;
-				pl_status->SetStatus(i->Send(packet));
+				std::cout << "ES MI TURNO" << std::endl;
+				sf::Packet packet;
 
-				if (pl_status->GetStatus() == sf::Socket::Done)
+				for (auto const& i : pl_clients)
 				{
-					std::cout << "El paquete se ha enviado correctamente\n";
-					packet.clear();
-				}
-				else {
-					std::cout << "El paquete no se ha podido enviar\n";
+					//When packet its ready, send it to connected user
+					packet << HEADER_MSG::MSG_TURN;
+					pl_status->SetStatus(i->Send(packet));
+
+					if (pl_status->GetStatus() == sf::Socket::Done)
+					{
+						std::cout << "El paquete se ha enviado correctamente\n";
+						packet.clear();
+					}
+					else {
+						std::cout << "El paquete no se ha podido enviar\n";
+					}
 				}
 			}
+			else
+			{
+				std::cout << "NO ES MI TURNO" << std::endl;
+			}
 		}
-		else 
-		{
-			std::cout << "NO ES MI TURNO" << std::endl;
-		}
-		
-		Sleep(1000000000);
 	}
 }
 
@@ -252,6 +250,17 @@ void Client::CheckPlayersRdy()
 {
 	while (!this->gamestarded)
 	{
+		std::cout << "----------------------------------------------------------" << std::endl;
+
+		if (this->rdy) 
+		{
+			std::cout << "El jugador " << this->pl_socket->GetRemoteLocalPort() << " ESTA rdy" << std::endl;
+		}
+		else 
+		{
+			std::cout << "El jugador " << this->pl_socket->GetRemoteLocalPort() << " NO ESTA rdy aun" << std::endl;
+		}
+
 		for (auto const& i : pl_clients)
 		{
 			if (i->GetRdy())
@@ -264,8 +273,8 @@ void Client::CheckPlayersRdy()
 			}
 		}
 
-		std::cout << "----------------------------------------------------------";
-		std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP * 3));
+		std::cout << "----------------------------------------------------------" << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP));
 	}
 }
 
@@ -291,7 +300,16 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 		break;
 	case MSG_PEERS:
 		break;
-	default:
+	case MSG_RDY:
+		for (auto const& i : pl_clients)
+		{
+			if (client->GetRemotePort() == i->GetRemotePort())
+			{
+				i->SetRdy(true);
+			}
+		}
+		break;
+	case MSG_TURN:
 		break;
 	}
 
@@ -374,9 +392,8 @@ void Client::AssignDeck()
 	}
 }
 
-void Client::AsignHandsAndTurn()
+void Client::AsignHandsAndTurn() 
 {
-
 	for (size_t i = 0; i < 4; i++)
 	{
 		hands[i] = new Hand();
@@ -384,6 +401,45 @@ void Client::AsignHandsAndTurn()
 
 		//Asignamos aqui el turno correctamente 
 		hands[i]->playerTurn = 0;
+	}
+}
+
+void Client::Wait4Rdy()
+{
+	if (!this->rdy) 
+	{
+		std::string msg;
+		std::cout << "\nINTRODUCE (r) cuando estes listo para empezar la partida: ";
+		std::cin >> msg;
+
+		if (msg == "r")
+		{
+			std::cout << "\nESTAS RDY PARA EMPEZAR LA PARTIDA, MIRANDO SI LOS OTROS LO ESTÁN" << std::endl;
+			this->rdy = true;
+
+			//Check if other players are rdy
+			std::thread checkPlayersRdyListener(&Client::CheckPlayersRdy, this);
+			checkPlayersRdyListener.detach();
+
+
+			//Send Rdy
+			sf::Packet packet;
+			for (auto const& i : pl_clients)
+			{
+				//When packet its ready, send it to connected user
+				packet << HEADER_MSG::MSG_RDY << true;
+				pl_status->SetStatus(i->Send(packet));
+
+				if (pl_status->GetStatus() == sf::Socket::Done)
+				{
+					std::cout << "El paquete se ha enviado correctamente\n";
+					packet.clear();
+				}
+				else {
+					std::cout << "El paquete no se ha podido enviar\n";
+				}
+			}
+		}
 	}
 }
 

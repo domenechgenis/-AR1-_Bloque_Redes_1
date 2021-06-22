@@ -7,6 +7,7 @@
 #include <list>
 #include <map>
 #include <windows.h>
+#include <algorithm>
 
 #include "TcpSocket.h"
 #include "TcpListener.h"
@@ -55,6 +56,7 @@ public:
     void AssignDeck();
     void DealCards();
     void AsignHandsAndTurn();
+    void Wait4Rdy();
 
     //Utils
     std::string HeaderToString(HEADER_MSG);
