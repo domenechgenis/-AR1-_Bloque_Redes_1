@@ -21,8 +21,6 @@
 class Client
 {
     std::list<TcpSocketClass*> pl_clients;
-
-    int id;
     std::mutex clientsSemaphore;
 
     //Abstracted SFML
@@ -31,10 +29,11 @@ class Client
     TcpSocketSelectorClass* pl_socketSelector;
     TcpStatusClass * pl_status;
     Deck *deck;
+
     std::map<int, Hand*> hands;
 
-    bool gameloop = false;
-    int seed;
+    bool gameloop,gamestarded,rdy;
+    int seed,id;
 
     HEADER_MSG header;
 
@@ -63,4 +62,5 @@ public:
     //Threads
     void SocketSelectorListener();
     void BoostrapServerListener();
+    void CheckPlayersRdy();
 };

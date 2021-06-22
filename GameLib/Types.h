@@ -10,6 +10,7 @@ enum HEADER_MSG {
 	MSG_OK,
 	MSG_KO,
 	MSG_PEERS,
+	MSG_RDY,
 	MSG_TURN,
 };
 

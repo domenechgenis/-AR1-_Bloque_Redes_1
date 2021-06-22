@@ -24,7 +24,7 @@ void Client::Run()
 	if (!ConnectToBBS() || !OpenListener()) 
 	{
 		std::cout << "El cliente no ha podido conectarse a ningun servidor, cerrando el programa... \n";
-		Sleep(microsecond);
+		Sleep(DEFAULT_SLEEP);
 		return;
 	}
 
@@ -50,7 +50,9 @@ void Client::Run()
 	std::thread boostrapServerListener(&Client::BoostrapServerListener, this);
 	boostrapServerListener.detach();
 
-	
+	std::thread checkPlayersRdyListener(&Client::CheckPlayersRdy, this);
+	checkPlayersRdyListener.detach();
+
 	std::cout << "Mi mano es" << id << std::endl;
 	std::cout << "Cantidad de cartas : "<< hands[id]->numCards<< std::endl;
 	hands[id]->PrintHand();
@@ -78,11 +80,11 @@ void Client::Run()
 		{
 			std::cout << "ES MI TURNO" << std::endl;
 			sf::Packet packet;
-			packet << HEADER_MSG::MSG_TURN;
 
 			for (auto const& i : pl_clients)
 			{
 				//When packet its ready, send it to connected user
+				packet << HEADER_MSG::MSG_TURN;
 				pl_status->SetStatus(i->Send(packet));
 
 				if (pl_status->GetStatus() == sf::Socket::Done)
@@ -100,7 +102,7 @@ void Client::Run()
 			std::cout << "NO ES MI TURNO" << std::endl;
 		}
 		
-		Sleep(microsecond);
+		Sleep(1000000000);
 	}
 }
 
@@ -188,7 +190,7 @@ void Client::ListenToPlayers()
 				else {
 					delete player;
 					std::cout << "Error al recibir un player\n";
-					Sleep(microsecond);
+					Sleep(DEFAULT_SLEEP);
 					exit(0);
 				}
 			}
@@ -196,7 +198,7 @@ void Client::ListenToPlayers()
 		else 
 		{
 			std::cout << "Error al abrir listener\n";
-			Sleep(microsecond);
+			Sleep(DEFAULT_SLEEP);
 			exit(0);
 		}
 	}
@@ -243,6 +245,27 @@ void Client::BoostrapServerListener()
 	while (gameloop)
 	{
 
+	}
+}
+
+void Client::CheckPlayersRdy()
+{
+	while (!this->gamestarded)
+	{
+		for (auto const& i : pl_clients)
+		{
+			if (i->GetRdy())
+			{
+				std::cout << "El jugador " << i->GetRemoteLocalPort() << " ESTA rdy" << std::endl;
+			}
+			else
+			{
+				std::cout << "El jugador " << i->GetRemoteLocalPort() << " NO ESTA rdy aun" << std::endl;
+			}
+		}
+
+		std::cout << "----------------------------------------------------------";
+		std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP * 3));
 	}
 }
 
@@ -306,7 +329,7 @@ void Client::Wait4ServerPacket()
 
 				//Add this client to the list because connection its done
 				std::cout << "Me connecto correctamente a " << player->GetRemotePort() << std::endl;
-				player->SetID(i);
+				player->SetId(i);
 				pl_clients.push_back(player);
 				pl_socketSelector->Add(player->GetSocket());
 
@@ -314,7 +337,7 @@ void Client::Wait4ServerPacket()
 			else {
 				std::cout << "Error al connectar el jugador a la partida";
 				delete player;
-				Sleep(microsecond);
+				Sleep(DEFAULT_SLEEP);
 				exit(0);
 			}
 		}
@@ -341,7 +364,7 @@ void Client::AssignDeck()
 	{
 		for (auto const& i : pl_clients) 
 		{
-			if (i->GetID() == 0)
+			if (i->GetId() == 0)
 			{
 				seed = i->GetRemotePort();
 				deck->ShuffleDeck(seed);
