@@ -23,7 +23,7 @@ private:
 	TcpStatusClass* sv_status;
 
 	bool running = false;
-	Header header;
+	HEADER_MSG header;
 
 	void OpenListener();
 	void DisconnectServer();

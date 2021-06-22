@@ -67,13 +67,11 @@ sf::Socket::Status TcpSocketClass::Recieve(sf::Packet &packet)
     return tcpSocket->receive(packet);
 }
 
-void TcpSocketClass::SetID(int _id) {
-
+void TcpSocketClass::SetID(int _id) 
+{
     id = _id;
-
 }
-int TcpSocketClass::GetID() {
-
+int TcpSocketClass::GetID() 
+{
     return id;
-
 }

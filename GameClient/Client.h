@@ -36,7 +36,7 @@ class Client
     bool gameloop = false;
     int seed;
 
-    Header header;
+    HEADER_MSG header;
 
 public:
     Client();
@@ -56,6 +56,10 @@ public:
     void AssignDeck();
     void DealCards();
     void AsignHandsAndTurn();
+
+    //Utils
+    std::string HeaderToString(HEADER_MSG);
+
     //Threads
     void SocketSelectorListener();
     void BoostrapServerListener();

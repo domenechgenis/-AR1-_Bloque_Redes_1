@@ -21,7 +21,8 @@ Client::~Client()
 void Client::Run()
 {
 	//Connect player to Port 50.000
-	if (!ConnectToBBS() || !OpenListener()) {
+	if (!ConnectToBBS() || !OpenListener()) 
+	{
 		std::cout << "El cliente no ha podido conectarse a ningun servidor, cerrando el programa... \n";
 		Sleep(microsecond);
 		return;
@@ -29,13 +30,6 @@ void Client::Run()
 
 	//Wait4ServerPackets
 	Wait4ServerPacket();
-
-	//Listener thread
-	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
-	socketselectorListener.detach();
-
-	std::thread boostrapServerListener(&Client::BoostrapServerListener, this);
-	boostrapServerListener.detach();
 
 	ShowCurrentPlayers();
 
@@ -46,9 +40,16 @@ void Client::Run()
 	system("cls");
 	AssignDeck();
 
-	
 	AsignHandsAndTurn();
 	DealCards();
+
+	//Listener thread
+	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
+	socketselectorListener.detach();
+
+	std::thread boostrapServerListener(&Client::BoostrapServerListener, this);
+	boostrapServerListener.detach();
+
 	
 	std::cout << "Mi mano es" << id << std::endl;
 	std::cout << "Cantidad de cartas : "<< hands[id]->numCards<< std::endl;
@@ -56,21 +57,48 @@ void Client::Run()
 	std::cout <<"--------------------------------------------------"<< std::endl;
 
 	std::cout << "Manos de los otros : "<< std::endl;
-	for (int i = 0; i < 4; i++) {
-		if (i != id) {
+	for (int i = 0; i < 4; i++)
+	{
+		if (i != id)
+		{
 			std::cout << "Cantidad de cartas : " << hands[i]->numCards << std::endl;
 			std::cout << "La mano del jugador  " << i << " es:" << std::endl;
 			hands[i]->PrintHand();
 		}
-		
 	}
-	
+
+	system("cls");
 
 	while (gameloop)
 	{
 		//Match Start
-		
 		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS" << std::endl;
+
+		if (id == hands[0]->playerTurn) 
+		{
+			std::cout << "ES MI TURNO" << std::endl;
+			sf::Packet packet;
+			packet << HEADER_MSG::MSG_TURN;
+
+			for (auto const& i : pl_clients)
+			{
+				//When packet its ready, send it to connected user
+				pl_status->SetStatus(i->Send(packet));
+
+				if (pl_status->GetStatus() == sf::Socket::Done)
+				{
+					std::cout << "El paquete se ha enviado correctamente\n";
+					packet.clear();
+				}
+				else {
+					std::cout << "El paquete no se ha podido enviar\n";
+				}
+			}
+		}
+		else 
+		{
+			std::cout << "NO ES MI TURNO" << std::endl;
+		}
 		
 		Sleep(microsecond);
 	}
@@ -125,14 +153,13 @@ bool Client::OpenListener()
 
 void Client::ShowCurrentPlayers()
 {
-
 	std::cout << "Clientes connectados actualmente: " << pl_clients.size() << std::endl;
 
-	for (auto const& i : pl_clients) {
+	for (auto const& i : pl_clients) 
+	{
 		std::cout << "Cliente: " << i + 1;
 		std::cout << " Puerto ---> " << i->GetRemotePort() << std::endl;
 	}
-
 }
 
 void Client::ListenToPlayers()
@@ -166,21 +193,20 @@ void Client::ListenToPlayers()
 				}
 			}
 		}
-		else {
-
+		else 
+		{
 			std::cout << "Error al abrir listener\n";
 			Sleep(microsecond);
 			exit(0);
 		}
 	}
 
-
 	gameloop = true;
 }
 
 void Client::SocketSelectorListener()
 {
-	while (gameloop)
+	while (true)
 	{
 		for (TcpSocketClass* client : pl_clients)
 		{
@@ -222,11 +248,15 @@ void Client::BoostrapServerListener()
 
 void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 {
-	std::cout << "Estoy recibiendo un paquete del Cliente: " << client->GetRemotePort() << std::endl;
-	int header_int;
+	this->clientsSemaphore.lock();
+
+	std::cout << "\nEstoy recibiendo un paquete del Cliente: " << client->GetRemotePort() << std::endl;
+	int header_int = 0;
 
 	packet >> header_int;
-	header = Header(header_int);
+	header = HEADER_MSG(header_int);
+
+	std::cout << "\nEstoy recibiendo la cabecera: " << header_int << std::endl;
 
 	switch (header)
 	{
@@ -242,8 +272,9 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 		break;
 	}
 
-
 	packet.clear();
+
+	this->clientsSemaphore.unlock();
 }
 
 void Client::Wait4ServerPacket()
@@ -255,7 +286,8 @@ void Client::Wait4ServerPacket()
 
 	pl_status->SetStatus(pl_socket->Recieve(packet));
 
-	if (pl_status->GetStatus() == sf::Socket::Done) {
+	if (pl_status->GetStatus() == sf::Socket::Done) 
+	{
 
 		packet >> numberPlayers;
 		nPlayers = std::stoi(numberPlayers);
@@ -266,34 +298,30 @@ void Client::Wait4ServerPacket()
 			packet >> str_port;
 			int puerto = std::stoi(str_port);
 
-		
-
-				//Connecto el puerto que me lleva a un socket;
-				TcpSocketClass* player = new TcpSocketClass();
-				pl_status->SetStatus(player->Connect(pl_socket->GetRemoteAdress(), puerto, sf::milliseconds(15.f)));
+			//Connecto el puerto que me lleva a un socket;
+			TcpSocketClass* player = new TcpSocketClass();
+			pl_status->SetStatus(player->Connect(pl_socket->GetRemoteAdress(), puerto, sf::milliseconds(15.f)));
 				
-				if (pl_status->GetStatus() == sf::Socket::Done) {
+			if (pl_status->GetStatus() == sf::Socket::Done) {
 
-					//Add this client to the list because connection its done
-					std::cout << "Me connecto correctamente a " << player->GetRemotePort() << std::endl;
-					player->SetID(i);
-					pl_clients.push_back(player);
-					pl_socketSelector->Add(player->GetSocket());
+				//Add this client to the list because connection its done
+				std::cout << "Me connecto correctamente a " << player->GetRemotePort() << std::endl;
+				player->SetID(i);
+				pl_clients.push_back(player);
+				pl_socketSelector->Add(player->GetSocket());
 
-				}
-				else {
-					std::cout << "Error al connectar el jugador a la partida";
-					delete player;
-					Sleep(microsecond);
-					exit(0);
-
-				}
-
-			
+			}
+			else {
+				std::cout << "Error al connectar el jugador a la partida";
+				delete player;
+				Sleep(microsecond);
+				exit(0);
+			}
 		}
 		id = nPlayers;
 	}
-	else {
+	else 
+	{
 		std::cout << "Nadie me envia nada" << std::endl;
 	}
 	packet.clear();
@@ -330,32 +358,50 @@ void Client::AsignHandsAndTurn()
 	{
 		hands[i] = new Hand();
 		hands[i]->inGame = true;
+
 		//Asignamos aqui el turno correctamente 
 		hands[i]->playerTurn = 0;
 	}
 }
 
+std::string Client::HeaderToString(HEADER_MSG header)
+{
+	switch (header)
+	{
+	case MSG_NULL:
+		return "MSG_NULL";
+	case MSG_OK:
+		return "MSG_OK";
+	case MSG_KO:
+		return "MSG_KO";
+	case MSG_PEERS:
+		return "MSG_PEERS";
+	case MSG_TURN:
+		return "MSG_TURN";
+	}
+}
+
 void Client::DealCards()
 {
-	
 	for (int i = 0; i < deck->deck.size(); i++)
 	{
-		if (i <= 10) {
+		if (i <= 10) 
+		{
 			hands[0]->addCard(*deck->deck[i]);	
 		}
-		else if (i>10 && i<=20) {
-
+		else if (i>10 && i<=20)
+		{
 			hands[1]->addCard(*deck->deck[i]);
 		}
-		else if (i > 20 && i <= 30) {
+		else if (i > 20 && i <= 30) 
+		{
 			hands[2]->addCard(*deck->deck[i]);
 		}
-		else {
+		else 
+		{
 			hands[3]->addCard(*deck->deck[i]);
 		}
-		
 	}
-	
 }
 
 
