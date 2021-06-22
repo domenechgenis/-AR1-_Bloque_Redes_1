@@ -50,13 +50,15 @@ public:
     void ShowCurrentPlayers();
     void ListenToPlayers();
 
-    void HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client);
-
     void Wait4ServerPacket();
     void AssignDeck();
     void DealCards();
     void AsignHandsAndTurn();
     void Wait4Rdy();
+
+    //Handle Main Reciever
+    void HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client);
+    void HandleRdyReciever(sf::Packet& packet, TcpSocketClass* client);
 
     //Utils
     std::string HeaderToString(HEADER_MSG);

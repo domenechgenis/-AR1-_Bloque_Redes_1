@@ -75,6 +75,7 @@ void Client::Run()
 
 		while (gamestarded)
 		{
+			system("cls");
 			if (id == hands[0]->playerTurn)
 			{
 				std::cout << "ES MI TURNO" << std::endl;
@@ -100,6 +101,8 @@ void Client::Run()
 			{
 				std::cout << "NO ES MI TURNO" << std::endl;
 			}
+
+			Sleep(100000);
 		}
 	}
 }
@@ -251,10 +254,12 @@ void Client::CheckPlayersRdy()
 	while (!this->gamestarded)
 	{
 		std::cout << "----------------------------------------------------------" << std::endl;
+		int j = 0;
 
 		if (this->rdy) 
 		{
 			std::cout << "El jugador " << this->pl_socket->GetRemoteLocalPort() << " ESTA rdy" << std::endl;
+			j++;
 		}
 		else 
 		{
@@ -266,11 +271,21 @@ void Client::CheckPlayersRdy()
 			if (i->GetRdy())
 			{
 				std::cout << "El jugador " << i->GetRemoteLocalPort() << " ESTA rdy" << std::endl;
+				j++;
 			}
 			else
 			{
 				std::cout << "El jugador " << i->GetRemoteLocalPort() << " NO ESTA rdy aun" << std::endl;
 			}
+		}
+
+		if (j == 4) 
+		{
+			std::cout << "----------------------------------------------------------" << std::endl;
+			std::cout << "TODOS LOS JUGADORES ESTAN PREPARADOS PARA EMPEZAR LA PARTIDA" << std::endl;
+			std::cout << "----------------------------------------------------------" << std::endl;
+
+			gamestarded = true;
 		}
 
 		std::cout << "----------------------------------------------------------" << std::endl;
@@ -301,13 +316,7 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 	case MSG_PEERS:
 		break;
 	case MSG_RDY:
-		for (auto const& i : pl_clients)
-		{
-			if (client->GetRemotePort() == i->GetRemotePort())
-			{
-				i->SetRdy(true);
-			}
-		}
+		HandleRdyReciever(packet,client);
 		break;
 	case MSG_TURN:
 		break;
@@ -316,6 +325,17 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 	packet.clear();
 
 	this->clientsSemaphore.unlock();
+}
+
+void Client::HandleRdyReciever(sf::Packet& packet, TcpSocketClass* client)
+{
+	for (auto const& i : pl_clients)
+	{
+		if (client->GetRemotePort() == i->GetRemotePort())
+		{
+			i->SetRdy(true);
+		}
+	}
 }
 
 void Client::Wait4ServerPacket()
@@ -420,7 +440,6 @@ void Client::Wait4Rdy()
 			//Check if other players are rdy
 			std::thread checkPlayersRdyListener(&Client::CheckPlayersRdy, this);
 			checkPlayersRdyListener.detach();
-
 
 			//Send Rdy
 			sf::Packet packet;
