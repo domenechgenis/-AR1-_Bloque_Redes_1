@@ -38,6 +38,11 @@ class Client
 
     HEADER_MSG header;
 
+    //In game variables
+    int player;
+    Culture culture;
+    Family family;
+
 public:
     Client();
     ~Client();
@@ -59,14 +64,24 @@ public:
     //Handle Main Reciever
     void HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client);
     void HandleRdyReciever(sf::Packet& packet, TcpSocketClass* client);
+    void HandleTurnReciever(sf::Packet& packet, TcpSocketClass* client);
 
     void HandlePlayerTurn();
+    void HandlePlayerDecision();
 
     //Utils
     std::string HeaderToString(HEADER_MSG);
+    std::string castSwitchToStringCulture(Culture);
+    std::string castSwitchToStringType(Family);
+    int castStringToIntCulture(std::string culture);
+    int castStringToIntType(std::string types);
+
+    //In Game Extracted functions
+    void ExtractPlayer();
+    void ExtractCulture();
+    void ExtractFamily();
 
     //Threads
     void SocketSelectorListener();
-    void BoostrapServerListener();
     void CheckPlayersRdy();
 };
