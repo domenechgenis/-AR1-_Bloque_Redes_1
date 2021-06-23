@@ -7,6 +7,7 @@
 #include <list>
 #include <map>
 #include <windows.h>
+#include <algorithm>
 
 #include "TcpSocket.h"
 #include "TcpListener.h"
@@ -21,8 +22,6 @@
 class Client
 {
     std::list<TcpSocketClass*> pl_clients;
-
-    int id;
     std::mutex clientsSemaphore;
 
     //Abstracted SFML
@@ -31,12 +30,18 @@ class Client
     TcpSocketSelectorClass* pl_socketSelector;
     TcpStatusClass * pl_status;
     Deck *deck;
+
     std::map<int, Hand*> hands;
 
-    bool gameloop = false;
-    int seed;
+    bool gameloop,gamestarded,rdy;
+    int seed,id;
 
-    Header header;
+    HEADER_MSG header;
+
+    //In game variables
+    int player;
+    Culture culture;
+    Family family;
 
 public:
     Client();
@@ -50,13 +55,36 @@ public:
     void ShowCurrentPlayers();
     void ListenToPlayers();
 
-    void HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client);
-
     void Wait4ServerPacket();
     void AssignDeck();
     void DealCards();
     void AsignHandsAndTurn();
+    void Wait4Rdy();
+    void CreateOrJoinRoom();
+
+    //Handle Main Reciever
+    void HandlePacketReciever(sf::Packet&, TcpSocketClass*);
+    void HandleRdyReciever(sf::Packet&, TcpSocketClass*);
+    void HandleTurnReciever(sf::Packet&, TcpSocketClass*);
+
+    void HandlePlayerTurn();
+    void HandlePlayerDecision();
+
+    //Utils
+    std::string HeaderToString(HEADER_MSG);
+    std::string castSwitchToStringCulture(Culture);
+    std::string castSwitchToStringType(Family);
+    int castStringToIntCulture(std::string culture);
+    int castStringToIntType(std::string types);
+
+    //In Game Extracted functions
+    void ExtractPlayer();
+    void ExtractCulture();
+    void ExtractFamily();
+    void CreateRoom();
+    void JoinRoom();
+
     //Threads
     void SocketSelectorListener();
-    void BoostrapServerListener();
+    void CheckPlayersRdy();
 };

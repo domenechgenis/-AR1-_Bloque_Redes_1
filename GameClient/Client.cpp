@@ -17,25 +17,21 @@ Client::~Client()
 	delete[] pl_status;
 }
 
-
 void Client::Run()
 {
-	//Connect player to Port 50.000
-	if (!ConnectToBBS() || !OpenListener()) {
+	//Connect player to Port 50.000 and Open Listener
+	if (!ConnectToBBS() || !OpenListener()) 
+	{
 		std::cout << "El cliente no ha podido conectarse a ningun servidor, cerrando el programa... \n";
-		Sleep(microsecond);
+		Sleep(DEFAULT_SLEEP);
 		return;
 	}
 
+	//Create Room or Join it
+	CreateOrJoinRoom();
+
 	//Wait4ServerPackets
 	Wait4ServerPacket();
-
-	//Listener thread
-	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
-	socketselectorListener.detach();
-
-	std::thread boostrapServerListener(&Client::BoostrapServerListener, this);
-	boostrapServerListener.detach();
 
 	ShowCurrentPlayers();
 
@@ -46,33 +42,41 @@ void Client::Run()
 	system("cls");
 	AssignDeck();
 
-	
 	AsignHandsAndTurn();
 	DealCards();
-	
+
+	//Listener thread
+	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
+	socketselectorListener.detach();
+
 	std::cout << "Mi mano es" << id << std::endl;
 	std::cout << "Cantidad de cartas : "<< hands[id]->numCards<< std::endl;
 	hands[id]->PrintHand();
 	std::cout <<"--------------------------------------------------"<< std::endl;
 
 	std::cout << "Manos de los otros : "<< std::endl;
-	for (int i = 0; i < 4; i++) {
-		if (i != id) {
+	for (int i = 0; i < 4; i++)
+	{
+		if (i != id)
+		{
 			std::cout << "Cantidad de cartas : " << hands[i]->numCards << std::endl;
 			std::cout << "La mano del jugador  " << i << " es:" << std::endl;
 			hands[i]->PrintHand();
 		}
-		
 	}
-	
+
+	system("cls");
+	//Match Start
+	std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS ESPERANDO A QUE ESTEN LISTOS" << std::endl;
 
 	while (gameloop)
 	{
-		//Match Start
-		
-		std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS" << std::endl;
-		
-		Sleep(microsecond);
+		Wait4Rdy();
+
+		while (gamestarded)
+		{
+			HandlePlayerTurn();
+		}
 	}
 }
 
@@ -125,14 +129,13 @@ bool Client::OpenListener()
 
 void Client::ShowCurrentPlayers()
 {
-
 	std::cout << "Clientes connectados actualmente: " << pl_clients.size() << std::endl;
 
-	for (auto const& i : pl_clients) {
+	for (auto const& i : pl_clients) 
+	{
 		std::cout << "Cliente: " << i + 1;
 		std::cout << " Puerto ---> " << i->GetRemotePort() << std::endl;
 	}
-
 }
 
 void Client::ListenToPlayers()
@@ -161,22 +164,232 @@ void Client::ListenToPlayers()
 				else {
 					delete player;
 					std::cout << "Error al recibir un player\n";
-					Sleep(microsecond);
+					Sleep(DEFAULT_SLEEP);
 					exit(0);
 				}
 			}
 		}
-		else {
-
+		else 
+		{
 			std::cout << "Error al abrir listener\n";
-			Sleep(microsecond);
+			Sleep(DEFAULT_SLEEP);
 			exit(0);
 		}
 	}
 
-
 	gameloop = true;
 }
+
+void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
+{
+	this->clientsSemaphore.lock();
+
+	std::cout << "\nEstoy recibiendo un paquete del Cliente: " << client->GetRemotePort() << std::endl;
+	int header_int = 0;
+
+	packet >> header_int;
+	header = HEADER_MSG(header_int);
+
+	std::cout << "\nEstoy recibiendo la cabecera: " << header_int << std::endl;
+
+	switch (header)
+	{
+	case MSG_NULL:
+		break;
+	case MSG_OK:
+		break;
+	case MSG_KO:
+		break;
+	case MSG_PEERS:
+		break;
+	case MSG_RDY:
+		HandleRdyReciever(packet,client);
+		break;
+	case MSG_TURN:
+		//HandleTurnReciever(packet, client);
+		break;
+	}
+
+	packet.clear();
+
+	this->clientsSemaphore.unlock();
+}
+
+void Client::HandleRdyReciever(sf::Packet& packet, TcpSocketClass* client)
+{
+	for (auto const& i : pl_clients)
+	{
+		if (client->GetRemotePort() == i->GetRemotePort())
+		{
+			i->SetRdy(true);
+		}
+	}
+}
+
+void Client::HandleTurnReciever(sf::Packet& packet, TcpSocketClass* client)
+{
+	int id_recieved, family_recieved, culture_recieved;
+	packet >> id_recieved;
+
+	packet >> culture_recieved;
+	Culture culture_rd = Culture(culture_recieved);
+
+	packet >> family_recieved;
+	Family family_rd = Family(family_recieved);
+
+
+	std::cout << "El jugador " << client->GetRemotePort() << " quiere coger carta al jugador " << id_recieved << " " << castSwitchToStringCulture(culture_rd) << " " << castSwitchToStringType(family_rd);
+
+}
+
+void Client::Wait4ServerPacket()
+{
+	sf::Packet packet;
+	std::string str_port;
+	std::string numberPlayers;
+	int nPlayers;
+
+	pl_status->SetStatus(pl_socket->Recieve(packet));
+
+	if (pl_status->GetStatus() == sf::Socket::Done) 
+	{
+		packet >> numberPlayers;
+		nPlayers = std::stoi(numberPlayers);
+
+		//Recibo cuantos players hay incluido yo
+		for (size_t i = 0; i < nPlayers; i++)
+		{
+			packet >> str_port;
+			int puerto = std::stoi(str_port);
+
+			//Connecto el puerto que me lleva a un socket;
+			TcpSocketClass* player = new TcpSocketClass();
+			pl_status->SetStatus(player->Connect(pl_socket->GetRemoteAdress(), puerto, sf::milliseconds(15.f)));
+				
+			if (pl_status->GetStatus() == sf::Socket::Done) {
+
+				//Add this client to the list because connection its done
+				std::cout << "Me connecto correctamente a " << player->GetRemotePort() << std::endl;
+				player->SetId(i);
+				pl_clients.push_back(player);
+				pl_socketSelector->Add(player->GetSocket());
+
+			}
+			else {
+				std::cout << "Error al connectar el jugador a la partida";
+				delete player;
+				Sleep(DEFAULT_SLEEP);
+				exit(0);
+			}
+		}
+		id = nPlayers;
+	}
+	else 
+	{
+		std::cout << "Nadie me envia nada" << std::endl;
+	}
+	packet.clear();
+
+}
+
+void Client::AssignDeck()
+{
+	deck = new Deck();
+
+	if (id == 0) 
+	{
+		seed = pl_socket->GetRemoteLocalPort();
+		deck->ShuffleDeck(seed);
+	}
+	else
+	{
+		for (auto const& i : pl_clients) 
+		{
+			if (i->GetId() == 0)
+			{
+				seed = i->GetRemotePort();
+				deck->ShuffleDeck(seed);
+				break;
+			}
+		}
+	}
+}
+
+void Client::AsignHandsAndTurn() 
+{
+	for (size_t i = 0; i < 4; i++)
+	{
+		hands[i] = new Hand();
+		hands[i]->inGame = true;
+
+		//Asignamos aqui el turno correctamente 
+		hands[i]->playerTurn = 0;
+	}
+}
+
+void Client::Wait4Rdy()
+{
+	if (!this->rdy) 
+	{
+		std::string msg;
+		std::cout << "\nINTRODUCE (r) cuando estes listo para empezar la partida: ";
+		std::cin >> msg;
+
+		if (msg == "r")
+		{
+			std::cout << "\nESTAS RDY PARA EMPEZAR LA PARTIDA, MIRANDO SI LOS OTROS LO ESTAN" << std::endl;
+			this->rdy = true;
+
+			//Check if other players are rdy
+			std::thread checkPlayersRdyListener(&Client::CheckPlayersRdy, this);
+			checkPlayersRdyListener.detach();
+
+			//Send Rdy
+			sf::Packet packet;
+			for (auto const& i : pl_clients)
+			{
+				//When packet its ready, send it to connected user
+				packet << HEADER_MSG::MSG_RDY << true;
+				pl_status->SetStatus(i->Send(packet));
+
+				if (pl_status->GetStatus() == sf::Socket::Done)
+				{
+					std::cout << "El paquete se ha enviado correctamente\n";
+					packet.clear();
+				}
+				else {
+					std::cout << "El paquete no se ha podido enviar\n";
+				}
+			}
+		}
+	}
+}
+
+void Client::DealCards()
+{
+	for (int i = 0; i < deck->deck.size(); i++)
+	{
+		if (i <= 10) 
+		{
+			hands[0]->addCard(*deck->deck[i]);	
+		}
+		else if (i>10 && i<=20)
+		{
+			hands[1]->addCard(*deck->deck[i]);
+		}
+		else if (i > 20 && i <= 30) 
+		{
+			hands[2]->addCard(*deck->deck[i]);
+		}
+		else 
+		{
+			hands[3]->addCard(*deck->deck[i]);
+		}
+	}
+}
+
+/// <summary>
+/// Threads functions
 
 void Client::SocketSelectorListener()
 {
@@ -212,150 +425,380 @@ void Client::SocketSelectorListener()
 	}
 }
 
-void Client::BoostrapServerListener()
+/// <summary>
+/// In game Functions
+
+void Client::HandlePlayerTurn()
 {
-	while (gameloop)
+	if (id == hands[0]->playerTurn)
 	{
+		system("cls");
 
-	}
-}
+		std::cout << "Esta es tu mano actual:" << std::endl;
+		std::cout << "--------------------------------------------------" << std::endl;
 
-void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
-{
-	std::cout << "Estoy recibiendo un paquete del Cliente: " << client->GetRemotePort() << std::endl;
-	int header_int;
+		hands[id]->PrintHand();
+		std::cout << "--------------------------------------------------" << std::endl;
 
-	packet >> header_int;
-	header = Header(header_int);
-
-	switch (header)
-	{
-	case MSG_NULL:
-		break;
-	case MSG_OK:
-		break;
-	case MSG_KO:
-		break;
-	case MSG_PEERS:
-		break;
-	default:
-		break;
-	}
-
-
-	packet.clear();
-}
-
-void Client::Wait4ServerPacket()
-{
-	sf::Packet packet;
-	std::string str_port;
-	std::string numberPlayers;
-	int nPlayers;
-
-	pl_status->SetStatus(pl_socket->Recieve(packet));
-
-	if (pl_status->GetStatus() == sf::Socket::Done) {
-
-		packet >> numberPlayers;
-		nPlayers = std::stoi(numberPlayers);
-
-		//Recibo cuantos players hay incluido yo
-		for (size_t i = 0; i < nPlayers; i++)
+		//Extract turn
+		std::string confirm;
+		do 
 		{
-			packet >> str_port;
-			int puerto = std::stoi(str_port);
+			ExtractPlayer();
+			ExtractCulture();
+			ExtractFamily();
 
-		
+			std::cout << "Has escogido quitarle " << castSwitchToStringCulture(culture) << " " << castSwitchToStringType(family) << " al jugador " << player << std::endl;
+			std::cout << "Quieres hacer esto (s) o hacer algun cambio (c): ";
+			std::cin >> confirm;
 
-				//Connecto el puerto que me lleva a un socket;
-				TcpSocketClass* player = new TcpSocketClass();
-				pl_status->SetStatus(player->Connect(pl_socket->GetRemoteAdress(), puerto, sf::milliseconds(15.f)));
-				
-				if (pl_status->GetStatus() == sf::Socket::Done) {
+			if (confirm == "c") 
+			{
+				std::cout << "Re-haciendo la decision... " << std::endl;
+			}
 
-					//Add this client to the list because connection its done
-					std::cout << "Me connecto correctamente a " << player->GetRemotePort() << std::endl;
-					player->SetID(i);
-					pl_clients.push_back(player);
-					pl_socketSelector->Add(player->GetSocket());
+		} while (confirm != "s");
 
-				}
-				else {
-					std::cout << "Error al connectar el jugador a la partida";
-					delete player;
-					Sleep(microsecond);
-					exit(0);
-
-				}
-
-			
-		}
-		id = nPlayers;
-	}
-	else {
-		std::cout << "Nadie me envia nada" << std::endl;
-	}
-	packet.clear();
-
-}
-
-void Client::AssignDeck()
-{
-	deck = new Deck();
-
-	if (id == 0) 
-	{
-		seed = pl_socket->GetRemoteLocalPort();
-		deck->ShuffleDeck(seed);
+		HandlePlayerDecision();
 	}
 	else
 	{
-		for (auto const& i : pl_clients) 
+		system("cls");
+
+		std::cout << "Esta es tu mano actual:" << std::endl;
+		std::cout << "--------------------------------------------------" << std::endl;
+
+		hands[id]->PrintHand();
+		std::cout << "NO es tu turno, esperando a que te toque" << std::endl;
+
+		Sleep(1000);
+	}
+}
+
+void Client::CreateOrJoinRoom()
+{
+	int msg;
+	do 
+	{
+		std::cout << "-------------------------------------------------------------------------------" << std::endl;
+		std::cout << "Quieres crear una partida - 0, o unirte a una partida - 1" << std::endl;
+		std::cout << "Tecla: ";
+		std::cin >> msg;
+
+		if(msg == 0) // Create Room
 		{
-			if (i->GetID() == 0)
+			CreateRoom();
+		}
+		else if(msg == 1) // Join Room
+		{
+			JoinRoom();
+		}
+		else if (msg == 2) // Error
+		{
+			std::cout << "Tecla no valida" << std::endl;
+		}
+	} while (msg > 1);
+}
+
+void Client::CreateRoom()
+{
+	std::string room, password;
+	int npassword;
+
+	std::cout << "-------------------------------------------------------------------------------" << std::endl;
+
+	std::cout << "Introduce el nombre de la sala:" << std::endl;
+	std::cout << "Nombre: ";
+	std::cin >> room;
+
+	do 
+	{
+		std::cout << "Quieres introducir contraseña a la partida 0 - Si , 1 - No" << std::endl;
+		std::cout << "Contraseña?: ";
+		std::cin >> npassword;
+
+		if(npassword == 0) // User want password
+		{
+			std::cout << "Introduce la contraseña de la partida: " << std::endl;
+			std::cout << "Contraseña: ";
+			std::cin >> password;
+		}
+		else if (npassword > 1) // Invalid Key
+		{
+			std::cout << "Tecla no valida" << std::endl;
+		}
+
+	} while (npassword > 1);
+}
+
+void Client::JoinRoom()
+{
+	std::cout << "-------------------------------------------------------------------------------" << std::endl;
+	std::cout << "Salas Disponibles: " << std::endl;
+}
+
+void Client::HandlePlayerDecision() 
+{
+	sf::Packet packet;
+
+	for (auto const& i : pl_clients) 
+	{
+		packet << HEADER_MSG::MSG_TURN << id << culture << family;
+		pl_status->SetStatus(i->Send(packet));
+
+		if (pl_status->GetStatus() == sf::Socket::Done)
+		{
+			std::cout << "El paquete se ha enviado correctamente\n";
+			packet.clear();
+		}
+		else
+		{
+			std::cout << "El paquete no se ha podido enviar\n";
+		}
+
+	}
+}
+
+void Client::CheckPlayersRdy()
+{
+	while (!this->gamestarded)
+	{
+		std::cout << "----------------------------------------------------------" << std::endl;
+		int j = 0;
+
+		if (this->rdy)
+		{
+			std::cout << "El jugador " << this->pl_socket->GetRemoteLocalPort() << " ESTA rdy" << std::endl;
+			j++;
+		}
+		else
+		{
+			std::cout << "El jugador " << this->pl_socket->GetRemoteLocalPort() << " NO ESTA rdy aun" << std::endl;
+		}
+
+		for (auto const& i : pl_clients)
+		{
+			if (i->GetRdy())
 			{
-				seed = i->GetRemotePort();
-				deck->ShuffleDeck(seed);
-				break;
+				std::cout << "El jugador " << i->GetRemoteLocalPort() << " ESTA rdy" << std::endl;
+				j++;
+			}
+			else
+			{
+				std::cout << "El jugador " << i->GetRemoteLocalPort() << " NO ESTA rdy aun" << std::endl;
 			}
 		}
+
+		if (j == 4)
+		{
+			std::cout << "----------------------------------------------------------" << std::endl;
+			std::cout << "TODOS LOS JUGADORES ESTAN PREPARADOS PARA EMPEZAR LA PARTIDA" << std::endl;
+			std::cout << "----------------------------------------------------------" << std::endl;
+
+			gamestarded = true;
+
+			//Send Respective turns to each player
+			if (id == hands[0]->playerTurn)
+			{
+				sf::Packet packet;
+				for (auto const& i : pl_clients)
+				{
+					//When packet its ready, send it to connected user
+					packet << HEADER_MSG::MSG_TURN;
+					pl_status->SetStatus(i->Send(packet));
+
+					if (pl_status->GetStatus() == sf::Socket::Done)
+					{
+						std::cout << "El paquete se ha enviado correctamente\n";
+						packet.clear();
+					}
+					else
+					{
+						std::cout << "El paquete no se ha podido enviar\n";
+					}
+				}
+			}
+			else
+			{
+				std::cout << "NO ES MI TURNO" << std::endl;
+			}
+		}
+
+		std::cout << "----------------------------------------------------------" << std::endl;
+		std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP));
 	}
 }
 
-void Client::AsignHandsAndTurn()
+void Client::ExtractPlayer()
 {
-
-	for (size_t i = 0; i < 4; i++)
+	int j = 0;
+	std::cout << "Es tu turno, a quien le quieres pedir carta?" << std::endl;
+	for (const auto& i : pl_clients)
 	{
-		hands[i] = new Hand();
-		hands[i]->inGame = true;
-		//Asignamos aqui el turno correctamente 
-		hands[i]->playerTurn = 0;
+		std::cout << "Jugador " << j++ << " - " << i->GetRemotePort() << std::endl;
+	}
+
+	do
+	{
+		std::cout << "Escoge coger una carta al jugador (0-2): ";
+		std::cin >> player;
+
+		if (player > 2)
+		{
+			std::cout << "\nJugador no disponible" << std::endl;
+		}
+	} while (player > 2);
+
+	std::cout << "--------------------------------------------------" << std::endl;
+}
+
+void Client::ExtractCulture()
+{
+	int int_culture = 0;
+
+	do
+	{
+		std::cout << "Elige la cultura:  (0) - 'ARABE' | (1) - 'BANTU' | (2) - 'CHINA' | (3) - 'ESQUIMAL' | (4) - 'INDIA' | (5) - 'MEXICANA' | (6) - 'TIROLESA' " << std::endl;
+		std::cout << "Cultura: ";
+
+		std::cin >> int_culture;
+		culture = (Culture)int_culture;
+
+		if (culture > 6)
+		{
+			std::cout << "\nCultura no disponible" << std::endl;
+		}
+	} while (culture > 6);
+
+	std::cout << "--------------------------------------------------" << std::endl;
+}
+
+void Client::ExtractFamily()
+{
+	int int_familia = 0;
+
+	do
+	{
+		std::cout << "Elige la familia: (0) - 'ABUELO' | (1) - 'ABUELA' | (2) - 'PADRE' | (3) - 'MADRE' | (4) - 'HIJO' | (5) - 'HIJA' " << std::endl;
+		std::cout << "Familia: ";
+
+		std::cin >> int_familia;
+		family = (Family)int_familia;
+
+		if (int_familia > 5)
+		{
+			std::cout << "\nFamilia no disponible" << std::endl;
+		}
+	} while (int_familia > 5);
+
+	std::cout << "--------------------------------------------------" << std::endl;
+}
+
+/// <summary>
+/// Cast Functions
+
+std::string Client::HeaderToString(HEADER_MSG header)
+{
+	switch (header)
+	{
+	case MSG_NULL:
+		return "MSG_NULL";
+	case MSG_OK:
+		return "MSG_OK";
+	case MSG_KO:
+		return "MSG_KO";
+	case MSG_PEERS:
+		return "MSG_PEERS";
+	case MSG_TURN:
+		return "MSG_TURN";
 	}
 }
 
-void Client::DealCards()
+std::string Client::castSwitchToStringCulture(Culture culture)
 {
-	
-	for (int i = 0; i < deck->deck.size(); i++)
+	switch (culture)
 	{
-		if (i <= 10) {
-			hands[0]->addCard(*deck->deck[i]);	
-		}
-		else if (i>10 && i<=20) {
-
-			hands[1]->addCard(*deck->deck[i]);
-		}
-		else if (i > 20 && i <= 30) {
-			hands[2]->addCard(*deck->deck[i]);
-		}
-		else {
-			hands[3]->addCard(*deck->deck[i]);
-		}
-		
+	case Culture::ARABE:
+		return "ARABE";
+	case Culture::BANTU:
+		return "BANTU";
+	case Culture::CHINA:
+		return "CHINA";
+	case Culture::ESQUIMAL:
+		return "ESQUIMAL";
+	case Culture::INDIA:
+		return "INDIA";
+	case Culture::MEXICANA:
+		return "MEXICANA";
+	case Culture::TIROLESA:
+		return "TIROLESA";
 	}
-	
+}
+
+std::string Client::castSwitchToStringType(Family types)
+{
+	switch (types)
+	{
+	case Family::ABUELO:
+		return "ABUELO";
+	case Family::ABUELA:
+		return "ABUELA";
+	case Family::PADRE:
+		return "PADRE";
+	case Family::MADRE:
+		return "MADRE";
+	case Family::HIJO:
+		return "HIJO";
+	case Family::HIJA:
+		return "HIJA";
+	}
+}
+
+int Client::castStringToIntCulture(std::string culture) {
+
+	if (culture == "ARABE") {
+		return 0;
+	}
+	else if (culture == "BANTU") {
+		return 1;
+	}
+	else if (culture == "CHINA") {
+		return 2;
+	}
+	else if (culture == "ESQUIMAL") {
+		return 3;
+	}
+	else if (culture == "INDIA") {
+		return 4;
+	}
+	else if (culture == "MEXICANA") {
+		return 5;
+	}
+	else if (culture == "TIROLESA") {
+		return 6;
+	}
+}
+
+int Client::castStringToIntType(std::string types) {
+
+	if (types == "ABUELO") {
+		return 0;
+	}
+	else if (types == "ABUELA") {
+		return 1;
+	}
+	else if (types == "PADRE") {
+		return 2;
+	}
+	else if (types == "MADRE") {
+		return 3;
+	}
+	else if (types == "HIJO") {
+		return 4;
+	}
+	else if (types == "HIJA") {
+		return 5;
+	}
 }
 
 
