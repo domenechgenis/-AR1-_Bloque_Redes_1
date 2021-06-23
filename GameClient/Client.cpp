@@ -19,13 +19,16 @@ Client::~Client()
 
 void Client::Run()
 {
-	//Connect player to Port 50.000
+	//Connect player to Port 50.000 and Open Listener
 	if (!ConnectToBBS() || !OpenListener()) 
 	{
 		std::cout << "El cliente no ha podido conectarse a ningun servidor, cerrando el programa... \n";
 		Sleep(DEFAULT_SLEEP);
 		return;
 	}
+
+	//Create Room or Join it
+	CreateOrJoinRoom();
 
 	//Wait4ServerPackets
 	Wait4ServerPacket();
@@ -203,7 +206,7 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 		HandleRdyReciever(packet,client);
 		break;
 	case MSG_TURN:
-		HandleTurnReciever(packet, client);
+		//HandleTurnReciever(packet, client);
 		break;
 	}
 
@@ -225,7 +228,18 @@ void Client::HandleRdyReciever(sf::Packet& packet, TcpSocketClass* client)
 
 void Client::HandleTurnReciever(sf::Packet& packet, TcpSocketClass* client)
 {
-	std::cout << "Holaaa" << std::endl;
+	int id_recieved, family_recieved, culture_recieved;
+	packet >> id_recieved;
+
+	packet >> culture_recieved;
+	Culture culture_rd = Culture(culture_recieved);
+
+	packet >> family_recieved;
+	Family family_rd = Family(family_recieved);
+
+
+	std::cout << "El jugador " << client->GetRemotePort() << " quiere coger carta al jugador " << id_recieved << " " << castSwitchToStringCulture(culture_rd) << " " << castSwitchToStringType(family_rd);
+
 }
 
 void Client::Wait4ServerPacket()
@@ -459,6 +473,68 @@ void Client::HandlePlayerTurn()
 
 		Sleep(1000);
 	}
+}
+
+void Client::CreateOrJoinRoom()
+{
+	int msg;
+	do 
+	{
+		std::cout << "-------------------------------------------------------------------------------" << std::endl;
+		std::cout << "Quieres crear una partida - 0, o unirte a una partida - 1" << std::endl;
+		std::cout << "Tecla: ";
+		std::cin >> msg;
+
+		if(msg == 0) // Create Room
+		{
+			CreateRoom();
+		}
+		else if(msg == 1) // Join Room
+		{
+			JoinRoom();
+		}
+		else if (msg == 2) // Error
+		{
+			std::cout << "Tecla no valida" << std::endl;
+		}
+	} while (msg > 1);
+}
+
+void Client::CreateRoom()
+{
+	std::string room, password;
+	int npassword;
+
+	std::cout << "-------------------------------------------------------------------------------" << std::endl;
+
+	std::cout << "Introduce el nombre de la sala:" << std::endl;
+	std::cout << "Nombre: ";
+	std::cin >> room;
+
+	do 
+	{
+		std::cout << "Quieres introducir contraseña a la partida 0 - Si , 1 - No" << std::endl;
+		std::cout << "Contraseña?: ";
+		std::cin >> npassword;
+
+		if(npassword == 0) // User want password
+		{
+			std::cout << "Introduce la contraseña de la partida: " << std::endl;
+			std::cout << "Contraseña: ";
+			std::cin >> password;
+		}
+		else if (npassword > 1) // Invalid Key
+		{
+			std::cout << "Tecla no valida" << std::endl;
+		}
+
+	} while (npassword > 1);
+}
+
+void Client::JoinRoom()
+{
+	std::cout << "-------------------------------------------------------------------------------" << std::endl;
+	std::cout << "Salas Disponibles: " << std::endl;
 }
 
 void Client::HandlePlayerDecision() 

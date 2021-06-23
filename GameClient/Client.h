@@ -60,11 +60,12 @@ public:
     void DealCards();
     void AsignHandsAndTurn();
     void Wait4Rdy();
+    void CreateOrJoinRoom();
 
     //Handle Main Reciever
-    void HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client);
-    void HandleRdyReciever(sf::Packet& packet, TcpSocketClass* client);
-    void HandleTurnReciever(sf::Packet& packet, TcpSocketClass* client);
+    void HandlePacketReciever(sf::Packet&, TcpSocketClass*);
+    void HandleRdyReciever(sf::Packet&, TcpSocketClass*);
+    void HandleTurnReciever(sf::Packet&, TcpSocketClass*);
 
     void HandlePlayerTurn();
     void HandlePlayerDecision();
@@ -80,6 +81,8 @@ public:
     void ExtractPlayer();
     void ExtractCulture();
     void ExtractFamily();
+    void CreateRoom();
+    void JoinRoom();
 
     //Threads
     void SocketSelectorListener();
