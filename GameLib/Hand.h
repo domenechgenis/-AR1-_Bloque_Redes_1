@@ -51,6 +51,7 @@ struct Hand {
 			if (i.culture == _cult) {
 				auxCount++;
 				if (auxCount == MAX_TYPE) {
+					std::cout << "Cultura completada" << std::endl;
 					return true;
 				}
 
