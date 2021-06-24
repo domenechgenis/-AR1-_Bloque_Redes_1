@@ -9,17 +9,10 @@ struct Hand {
 	bool inGame;
 	int playerTurn;
 	//Cuantas cartas de cada categoria tenemos
-	std::map<int, int> categoriesAmountCards;
+
 	//Tenemos actualmente la carta en la mano o no 
 	std::vector<Card> hand; // SINO CAMBIAR POR VECTOR ES LO MAS VIBLE SI NO FUNCIONA 
 
-
-	Hand() {
-		for (int i = 0; i < MAX_CULTURE; i++)
-		{
-			categoriesAmountCards[i] = 0;
-		}	
-	}
 
 	//Comprobamos si 
 	
@@ -51,6 +44,7 @@ struct Hand {
 			if (i.culture == _cult) {
 				auxCount++;
 				if (auxCount == MAX_TYPE) {
+					std::cout << "Cultura completada" << std::endl;
 					return true;
 				}
 
@@ -63,14 +57,20 @@ struct Hand {
 
 
 	void removeCard(Card _card) {
-		//Desactivamos la carta de la mano 
 		
+		
+		for (size_t i = 0; i < hand.size(); i++) {
 
-		categoriesAmountCards[(int)_card.culture]--;
-		for (size_t i = 0; i < hand.size();i++) {
+			if (hand[i].culture == _card.culture) {
+				std::cout << "La cultura es la misma\n";
+				if (hand[i].type  == _card.type) {	
+					std::cout << "El tipo es el\n";
+					std::vector<Card>::iterator it = hand.begin() + i;
+				
+					hand.erase(it);
+				}
+				
 
-			if (hand[i] == _card) {
-				hand.erase(hand.begin() + i);
 			}
 		}
 		numCards--;
@@ -78,15 +78,34 @@ struct Hand {
 		{
 			inGame = false;
 		}
-		std::cout << "///////////////////////BORRACIÓN////////////////////////////"<< std::endl;
+		std::cout << "///////////////////////BORRANDO////////////////////////////"<< std::endl;
+	}
+
+	void removeCard(Card::Culture _cult) {
+		int cont = 0;
+			std::cout << "/////////////////////// Hands " << hand.size() << " Hands ////////////////////////////" << std::endl;
+		for (size_t i = 0; i < hand.size(); i++) {
+
+			if (hand[i].culture == _cult) {
+			
+					std::vector<Card>::iterator it = hand.begin() + i;
+					
+					hand.erase(it);
+					cont++;
+					numCards--;
+			}
+		}
+
+		if (numCards <= 0)
+		{
+			inGame = false;
+		}
+		std::cout << "///////////////////////  "<<cont<<"  ////////////////////////////" << std::endl;
 	}
 
 	void addCard(Card _card) {
 
-		
 		hand.push_back(_card);
-	
-		categoriesAmountCards[(int)_card.culture]++;
 		//hand[_card] = true;
 		numCards++;
 		
@@ -95,13 +114,10 @@ struct Hand {
 		{
 			//Se suman los puntos y borramos estas cartas de la mano
 			points++;
-			for (auto i : hand) {
+			PrintHand();
+			removeCard(_card.culture);
 
-				if (i.culture == _card.culture) {
-					removeCard(_card);
-				}
-			}
-			
 		}
+		PrintHand();
 	}
 };

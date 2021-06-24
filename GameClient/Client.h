@@ -65,10 +65,12 @@ public:
     //Handle Main Reciever
     void HandlePacketReciever(sf::Packet&, TcpSocketClass*);
     void HandleRdyReciever(sf::Packet&, TcpSocketClass*);
-    void HandleTurnReciever(sf::Packet&, TcpSocketClass*);
+    void HandleTurnReciever(sf::Packet&, TcpSocketClass*);   
+    void HandlePassTurnReciever(sf::Packet&, TcpSocketClass*);
 
     void HandlePlayerTurn();
-    void HandlePlayerDecision();
+    void HandlePlayerGoodDecision();
+    void HandlePlayerBadDecision();
 
     //Utils
     std::string HeaderToString(HEADER_MSG);
@@ -76,6 +78,9 @@ public:
     std::string castSwitchToStringType(Family);
     int castStringToIntCulture(std::string culture);
     int castStringToIntType(std::string types);
+    void UpdateHandsTakeCardFromPlayer(int _id, int _player , Card::Culture _culture, Card::Types _type);
+    bool CheckCard(int _playerID , Card::Culture _culture, Card::Types _type);
+    void PasarTurno(int _id);
 
     //In Game Extracted functions
     void ExtractPlayer();

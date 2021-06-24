@@ -154,7 +154,7 @@ void Client::ListenToPlayers()
 					std::cout << "Connexion recibia del cliente: " << player->GetRemotePort() << std::endl;
 
 					pl_socketSelector->Add(player->GetSocket());
-
+					player->SetId(pl_clients.size()+1);
 					this->clientsSemaphore.lock();
 					pl_clients.push_back(player);
 					this->clientsSemaphore.unlock();
@@ -191,7 +191,7 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 	header = HEADER_MSG(header_int);
 
 	std::cout << "\nEstoy recibiendo la cabecera: " << header_int << std::endl;
-
+	
 	switch (header)
 	{
 	case MSG_NULL:
@@ -206,7 +206,10 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 		HandleRdyReciever(packet,client);
 		break;
 	case MSG_TURN:
-		//HandleTurnReciever(packet, client);
+		HandleTurnReciever(packet, client);
+		break;
+	case MSG_PASSTURN:
+		HandlePassTurnReciever(packet, client);
 		break;
 	}
 
@@ -228,17 +231,42 @@ void Client::HandleRdyReciever(sf::Packet& packet, TcpSocketClass* client)
 
 void Client::HandleTurnReciever(sf::Packet& packet, TcpSocketClass* client)
 {
-	int id_recieved, family_recieved, culture_recieved;
+	int id_recieved, player_recieved, family_recieved, culture_recieved;
+
 	packet >> id_recieved;
 
+	packet >> player_recieved;
+
 	packet >> culture_recieved;
-	Culture culture_rd = Culture(culture_recieved);
-
+	
 	packet >> family_recieved;
-	Family family_rd = Family(family_recieved);
+
+	
+	//Entra aqui por la cara por esto esta estwe "fix" hecho
+
+	if (id_recieved >= 0 && id_recieved <= 3 ) {
+
+		UpdateHandsTakeCardFromPlayer(id_recieved, player_recieved, (Card::Culture)culture_recieved, (Card::Types)family_recieved);
+
+	}
 
 
-	std::cout << "El jugador " << client->GetRemotePort() << " quiere coger carta al jugador " << id_recieved << " " << castSwitchToStringCulture(culture_rd) << " " << castSwitchToStringType(family_rd);
+}
+void Client::HandlePassTurnReciever(sf::Packet& packet, TcpSocketClass* client)
+{
+	int id_recieved;
+
+	packet >> id_recieved;
+
+
+	//Entra aqui por la cara por esto esta estwe "fix" hecho
+
+	if (id_recieved >= 0 && id_recieved <= 3) {
+
+		PasarTurno(id_recieved);
+
+	}
+
 
 }
 
@@ -447,7 +475,7 @@ void Client::HandlePlayerTurn()
 			ExtractPlayer();
 			ExtractCulture();
 			ExtractFamily();
-
+				
 			std::cout << "Has escogido quitarle " << castSwitchToStringCulture(culture) << " " << castSwitchToStringType(family) << " al jugador " << player << std::endl;
 			std::cout << "Quieres hacer esto (s) o hacer algun cambio (c): ";
 			std::cin >> confirm;
@@ -459,12 +487,37 @@ void Client::HandlePlayerTurn()
 
 		} while (confirm != "s");
 
-		HandlePlayerDecision();
+		//Comprobamos si ha acertado con la carta
+		if (CheckCard(player,(Card::Culture) culture,(Card::Types) family)) {
+
+			//Enviamos al resto de peers la informacion de las cartas
+			HandlePlayerGoodDecision();
+
+			std::cout <<"Has acertado la carta por lo que puedes coger otra"<< std::endl;
+
+			Sleep(2000);
+			HandlePlayerTurn();
+			
+		}
+		else {
+
+			std::cout << "Has fallado , pierdes el turno" << std::endl;
+			Sleep(1000);
+
+			//enviar paquete de cambio de turno
+			HandlePlayerBadDecision();
+			//Actualizamos en local el turno 
+			PasarTurno(id);
+
+		}
+
+
+		
 	}
 	else
 	{
 		system("cls");
-
+		std::cout << "Soy el jugador: " << id << std::endl;
 		std::cout << "Esta es tu mano actual:" << std::endl;
 		std::cout << "--------------------------------------------------" << std::endl;
 
@@ -537,13 +590,45 @@ void Client::JoinRoom()
 	std::cout << "Salas Disponibles: " << std::endl;
 }
 
-void Client::HandlePlayerDecision() 
+void Client::HandlePlayerGoodDecision() 
 {
+
+
 	sf::Packet packet;
 
 	for (auto const& i : pl_clients) 
 	{
-		packet << HEADER_MSG::MSG_TURN << id << culture << family;
+		packet << HEADER_MSG::MSG_TURN << id << player << culture << family;
+
+		//Se actualiza hands en el jugador actual;
+		
+
+		pl_status->SetStatus(i->Send(packet));
+
+		if (pl_status->GetStatus() == sf::Socket::Done)
+		{
+			std::cout << "El paquete se ha enviado correctamente\n";
+			packet.clear();
+		}
+		else
+		{
+			std::cout << "El paquete no se ha podido enviar\n";
+		}
+
+	}
+	
+	UpdateHandsTakeCardFromPlayer(id, player, (Card::Culture)culture, (Card::Types)family);
+	
+}
+void Client::HandlePlayerBadDecision()
+{
+
+	sf::Packet packet;
+
+	for (auto const& i : pl_clients)
+	{
+		packet << HEADER_MSG::MSG_PASSTURN << id ;
+
 		pl_status->SetStatus(i->Send(packet));
 
 		if (pl_status->GetStatus() == sf::Socket::Done)
@@ -563,6 +648,7 @@ void Client::CheckPlayersRdy()
 {
 	while (!this->gamestarded)
 	{
+		system("cls");
 		std::cout << "----------------------------------------------------------" << std::endl;
 		int j = 0;
 
@@ -633,21 +719,25 @@ void Client::ExtractPlayer()
 {
 	int j = 0;
 	std::cout << "Es tu turno, a quien le quieres pedir carta?" << std::endl;
-	for (const auto& i : pl_clients)
+	for (const auto & i : pl_clients)
 	{
-		std::cout << "Jugador " << j++ << " - " << i->GetRemotePort() << std::endl;
+		std::cout << "Jugador " <<i->GetId() << " - " << i->GetRemotePort() << std::endl;
 	}
 
-	do
-	{
-		std::cout << "Escoge coger una carta al jugador (0-2): ";
+	//do
+	//{
+		std::cout << "A que jugador de los anteriores quieres coger una carta?  ";
+	
 		std::cin >> player;
 
-		if (player > 2)
+		//Esto cambiarlo sino la logica no funciona
+		/*if (player > 2 || player <0)
 		{
 			std::cout << "\nJugador no disponible" << std::endl;
 		}
-	} while (player > 2);
+		*/
+
+	//} while (player > 2 || player < 0);
 
 	std::cout << "--------------------------------------------------" << std::endl;
 }
@@ -800,6 +890,46 @@ int Client::castStringToIntType(std::string types) {
 		return 5;
 	}
 }
+
+void Client::UpdateHandsTakeCardFromPlayer(int _id, int _player, Card::Culture _culture, Card::Types _type)
+{
+	Card *_newCard = new Card(_culture, _type);
+
+	
+	hands[_id]->addCard(*_newCard);
+
+
+	hands[_player]->removeCard(*_newCard);
+	
+	
+}
+
+bool Client::CheckCard(int _playerID, Card::Culture _culture, Card::Types _type)
+{
+	Card* checkcard = new Card(_culture, _type);
+	return hands[_playerID]->hasCard(*checkcard);
+
+}
+
+void Client::PasarTurno(int _id)
+{
+	for (auto i : hands ) {
+
+		if (_id == 3) {
+			i.second->playerTurn =0;
+		}
+		else {
+			i.second->playerTurn = _id + 1;
+		}
+		
+
+	}
+	
+
+}
+
+
+
 
 
 

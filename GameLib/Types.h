@@ -13,6 +13,7 @@ enum HEADER_MSG
 	MSG_PEERS,
 	MSG_RDY,
 	MSG_TURN,
+	MSG_PASSTURN,
 };
 
 enum Culture 
