@@ -65,13 +65,20 @@ struct Hand {
 
 	void removeCard(Card _card) {
 		//Desactivamos la carta de la mano 
-		
 
 		categoriesAmountCards[(int)_card.culture]--;
-		for (size_t i = 0; i < hand.size();i++) {
+		for (size_t i = 0; i < hand.size(); i++) {
 
-			if (hand[i] == _card) {
-				hand.erase(hand.begin() + i);
+			if (hand[i].culture == _card.culture) {
+				std::cout << "La cultura es la misma\n";
+				if (hand[i].type  == _card.type) {	
+					std::cout << "El tipo es el\n";
+					std::vector<Card>::iterator it = hand.begin() + i;
+					//std::cout << "CARTA BORRADA:" << hand.erase(it) << "\n\n"; ;
+					hand.erase(it);
+				}
+				
+
 			}
 		}
 		numCards--;
@@ -79,7 +86,7 @@ struct Hand {
 		{
 			inGame = false;
 		}
-		std::cout << "///////////////////////BORRACIÓN////////////////////////////"<< std::endl;
+		std::cout << "///////////////////////BORRACION////////////////////////////"<< std::endl;
 	}
 
 	void addCard(Card _card) {
@@ -94,12 +101,15 @@ struct Hand {
 		//comprobamos si tenemos todos los componentes de una cultura
 		if (cultureCompleted(_card.culture))
 		{
+			
 			//Se suman los puntos y borramos estas cartas de la mano
 			points++;
 			for (auto i : hand) {
 
 				if (i.culture == _card.culture) {
+					PrintHand();
 					removeCard(_card);
+					PrintHand();
 				}
 			}
 			

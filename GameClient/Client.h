@@ -65,10 +65,12 @@ public:
     //Handle Main Reciever
     void HandlePacketReciever(sf::Packet&, TcpSocketClass*);
     void HandleRdyReciever(sf::Packet&, TcpSocketClass*);
-    void HandleTurnReciever(sf::Packet&, TcpSocketClass*);
+    void HandleTurnReciever(sf::Packet&, TcpSocketClass*);   
+    void HandlePassTurnReciever(sf::Packet&, TcpSocketClass*);
 
     void HandlePlayerTurn();
-    void HandlePlayerDecision();
+    void HandlePlayerGoodDecision();
+    void HandlePlayerBadDecision();
 
     //Utils
     std::string HeaderToString(HEADER_MSG);
