@@ -616,7 +616,9 @@ void Client::HandlePlayerGoodDecision()
 		}
 
 	}
+	
 	UpdateHandsTakeCardFromPlayer(id, player, (Card::Culture)culture, (Card::Types)family);
+	
 }
 void Client::HandlePlayerBadDecision()
 {
@@ -892,13 +894,14 @@ int Client::castStringToIntType(std::string types) {
 void Client::UpdateHandsTakeCardFromPlayer(int _id, int _player, Card::Culture _culture, Card::Types _type)
 {
 	Card *_newCard = new Card(_culture, _type);
+
 	
 	hands[_id]->addCard(*_newCard);
 
-	hands[_player]->PrintHand();
+
 	hands[_player]->removeCard(*_newCard);
 	
-	hands[_player]->PrintHand();
+	
 }
 
 bool Client::CheckCard(int _playerID, Card::Culture _culture, Card::Types _type)

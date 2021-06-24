@@ -9,17 +9,10 @@ struct Hand {
 	bool inGame;
 	int playerTurn;
 	//Cuantas cartas de cada categoria tenemos
-	std::map<int, int> categoriesAmountCards;
+
 	//Tenemos actualmente la carta en la mano o no 
 	std::vector<Card> hand; // SINO CAMBIAR POR VECTOR ES LO MAS VIBLE SI NO FUNCIONA 
 
-
-	Hand() {
-		for (int i = 0; i < MAX_CULTURE; i++)
-		{
-			categoriesAmountCards[i] = 0;
-		}	
-	}
 
 	//Comprobamos si 
 	
@@ -64,9 +57,8 @@ struct Hand {
 
 
 	void removeCard(Card _card) {
-		//Desactivamos la carta de la mano 
-
-		categoriesAmountCards[(int)_card.culture]--;
+		
+		
 		for (size_t i = 0; i < hand.size(); i++) {
 
 			if (hand[i].culture == _card.culture) {
@@ -74,7 +66,7 @@ struct Hand {
 				if (hand[i].type  == _card.type) {	
 					std::cout << "El tipo es el\n";
 					std::vector<Card>::iterator it = hand.begin() + i;
-					//std::cout << "CARTA BORRADA:" << hand.erase(it) << "\n\n"; ;
+				
 					hand.erase(it);
 				}
 				
@@ -86,33 +78,46 @@ struct Hand {
 		{
 			inGame = false;
 		}
-		std::cout << "///////////////////////BORRACION////////////////////////////"<< std::endl;
+		std::cout << "///////////////////////BORRANDO////////////////////////////"<< std::endl;
+	}
+
+	void removeCard(Card::Culture _cult) {
+		int cont = 0;
+			std::cout << "/////////////////////// Hands " << hand.size() << " Hands ////////////////////////////" << std::endl;
+		for (size_t i = 0; i < hand.size(); i++) {
+
+			if (hand[i].culture == _cult) {
+			
+					std::vector<Card>::iterator it = hand.begin() + i;
+					
+					hand.erase(it);
+					cont++;
+					numCards--;
+			}
+		}
+
+		if (numCards <= 0)
+		{
+			inGame = false;
+		}
+		std::cout << "///////////////////////  "<<cont<<"  ////////////////////////////" << std::endl;
 	}
 
 	void addCard(Card _card) {
 
-		
 		hand.push_back(_card);
-	
-		categoriesAmountCards[(int)_card.culture]++;
 		//hand[_card] = true;
 		numCards++;
 		
 		//comprobamos si tenemos todos los componentes de una cultura
 		if (cultureCompleted(_card.culture))
 		{
-			
 			//Se suman los puntos y borramos estas cartas de la mano
 			points++;
-			for (auto i : hand) {
+			PrintHand();
+			removeCard(_card.culture);
 
-				if (i.culture == _card.culture) {
-					PrintHand();
-					removeCard(_card);
-					PrintHand();
-				}
-			}
-			
 		}
+		PrintHand();
 	}
 };
