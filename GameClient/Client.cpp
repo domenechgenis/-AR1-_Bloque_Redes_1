@@ -460,71 +460,96 @@ void Client::HandlePlayerTurn()
 {
 	if (id == hands[0]->playerTurn)
 	{
-		system("cls");
+		if (hands[id]->inGame) {
+			system("cls");
 
-		std::cout << "Esta es tu mano actual:" << std::endl;
-		std::cout << "--------------------------------------------------" << std::endl;
+			std::cout << "Esta es tu mano actual:" << std::endl;
+			std::cout << "--------------------------------------------------" << std::endl;
 
-		hands[id]->PrintHand();
-		std::cout << "--------------------------------------------------" << std::endl;
+			hands[id]->PrintHand();
+			std::cout << "--------------------------------------------------" << std::endl;
 
-		//Extract turn
-		std::string confirm;
-		do 
-		{
-			ExtractPlayer();
-			ExtractCulture();
-			ExtractFamily();
-				
-			std::cout << "Has escogido quitarle " << castSwitchToStringCulture(culture) << " " << castSwitchToStringType(family) << " al jugador " << player << std::endl;
-			std::cout << "Quieres hacer esto (s) o hacer algun cambio (c): ";
-			std::cin >> confirm;
-
-			if (confirm == "c") 
+			//Extract turn
+			std::string confirm;
+			do
 			{
-				std::cout << "Re-haciendo la decision... " << std::endl;
+				ExtractPlayer();
+				ExtractCulture();
+				ExtractFamily();
+
+				std::cout << "Has escogido quitarle " << castSwitchToStringCulture(culture) << " " << castSwitchToStringType(family) << " al jugador " << player << std::endl;
+				std::cout << "Quieres hacer esto (s) o hacer algun cambio (c): ";
+				std::cin >> confirm;
+
+				if (confirm == "c")
+				{
+					std::cout << "Re-haciendo la decision... " << std::endl;
+				}
+
+			} while (confirm != "s");
+
+			//Comprobamos si ha acertado con la carta
+			if (CheckCard(player, (Card::Culture)culture, (Card::Types)family)) {
+
+				UpdateHandsTakeCardFromPlayer(id, player, (Card::Culture)culture, (Card::Types)family);
+
+				//Enviamos al resto de peers la informacion de las cartas
+				HandlePlayerGoodDecision();
+
+				std::cout << "Has acertado la carta por lo que puedes coger otra" << std::endl;
+
+				Sleep(2000);
+				HandlePlayerTurn();
+
+			}
+			else {
+
+				std::cout << "Has fallado , pierdes el turno" << std::endl;
+				Sleep(1000);
+
+				//enviar paquete de cambio de turno
+				HandlePlayerBadDecision();
+				//Actualizamos en local el turno 
+				PasarTurno(id);
+
 			}
 
-		} while (confirm != "s");
-
-		//Comprobamos si ha acertado con la carta
-		if (CheckCard(player,(Card::Culture) culture,(Card::Types) family)) {
-
-			//Enviamos al resto de peers la informacion de las cartas
-			HandlePlayerGoodDecision();
-
-			std::cout <<"Has acertado la carta por lo que puedes coger otra"<< std::endl;
-
-			Sleep(2000);
-			HandlePlayerTurn();
-			
 		}
 		else {
-
-			std::cout << "Has fallado , pierdes el turno" << std::endl;
-			Sleep(1000);
-
-			//enviar paquete de cambio de turno
 			HandlePlayerBadDecision();
-			//Actualizamos en local el turno 
 			PasarTurno(id);
-
 		}
-
-
 		
 	}
 	else
 	{
-		system("cls");
-		std::cout << "Soy el jugador: " << id << std::endl;
-		std::cout << "Esta es tu mano actual:" << std::endl;
-		std::cout << "--------------------------------------------------" << std::endl;
 
-		hands[id]->PrintHand();
-		std::cout << "NO es tu turno, esperando a que te toque" << std::endl;
+		if (!hands[id]->inGame) {
 
-		Sleep(1000);
+			system("cls");
+			std::cout << "Soy el jugador: " << id <<"  y estoy en modo espectador\n" <<std::endl;
+
+			std::cout << "Puntuaciones: \n" << std::endl;
+			for (auto i : hands) {
+				std::cout << "Jugador" << i.first << ":" << i.second->points << std::endl;
+			}
+		}
+		else {
+			system("cls");
+			std::cout << "Soy el jugador: " << id << std::endl;
+			std::cout << "Esta es tu mano actual:" << std::endl;
+			std::cout << "--------------------------------------------------" << std::endl;
+
+			hands[id]->PrintHand();
+			std::cout << "NO es tu turno, esperando a que te toque\n" << std::endl;
+			std::cout << "Puntuaciones: \n" << std::endl;
+			for (auto i : hands) {
+				std::cout << "Jugador" << i.first << ":" << i.second->points << std::endl;
+			}
+		}
+		
+
+		Sleep(2000);
 	}
 }
 
@@ -601,8 +626,7 @@ void Client::HandlePlayerGoodDecision()
 		packet << HEADER_MSG::MSG_TURN << id << player << culture << family;
 
 		//Se actualiza hands en el jugador actual;
-		
-
+	
 		pl_status->SetStatus(i->Send(packet));
 
 		if (pl_status->GetStatus() == sf::Socket::Done)
@@ -617,7 +641,7 @@ void Client::HandlePlayerGoodDecision()
 
 	}
 	
-	UpdateHandsTakeCardFromPlayer(id, player, (Card::Culture)culture, (Card::Types)family);
+
 	
 }
 void Client::HandlePlayerBadDecision()
@@ -721,6 +745,7 @@ void Client::ExtractPlayer()
 	std::cout << "Es tu turno, a quien le quieres pedir carta?" << std::endl;
 	for (const auto & i : pl_clients)
 	{
+		if(hands[i->GetId()]->inGame)
 		std::cout << "Jugador " <<i->GetId() << " - " << i->GetRemotePort() << std::endl;
 	}
 
@@ -915,8 +940,11 @@ void Client::PasarTurno(int _id)
 {
 	for (auto i : hands ) {
 
+		
+
 		if (_id == 3) {
-			i.second->playerTurn =0;
+
+			i.second->playerTurn = 0;
 		}
 		else {
 			i.second->playerTurn = _id + 1;

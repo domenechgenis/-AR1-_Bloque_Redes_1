@@ -44,7 +44,7 @@ struct Hand {
 			if (i.culture == _cult) {
 				auxCount++;
 				if (auxCount == MAX_TYPE) {
-					std::cout << "Cultura completada" << std::endl;
+					std::cout << "Cultura " << Card::ToString(i.culture) <<" completada " << std::endl;
 					return true;
 				}
 
@@ -62,9 +62,9 @@ struct Hand {
 		for (size_t i = 0; i < hand.size(); i++) {
 
 			if (hand[i].culture == _card.culture) {
-				std::cout << "La cultura es la misma\n";
+			
 				if (hand[i].type  == _card.type) {	
-					std::cout << "El tipo es el\n";
+				
 					std::vector<Card>::iterator it = hand.begin() + i;
 				
 					hand.erase(it);
@@ -78,30 +78,9 @@ struct Hand {
 		{
 			inGame = false;
 		}
-		std::cout << "///////////////////////BORRANDO////////////////////////////"<< std::endl;
+		
 	}
 
-	void removeCard(Card::Culture _cult) {
-		int cont = 0;
-			std::cout << "/////////////////////// Hands " << hand.size() << " Hands ////////////////////////////" << std::endl;
-		for (size_t i = 0; i < hand.size(); i++) {
-
-			if (hand[i].culture == _cult) {
-			
-					std::vector<Card>::iterator it = hand.begin() + i;
-					
-					hand.erase(it);
-					cont++;
-					numCards--;
-			}
-		}
-
-		if (numCards <= 0)
-		{
-			inGame = false;
-		}
-		std::cout << "///////////////////////  "<<cont<<"  ////////////////////////////" << std::endl;
-	}
 
 	void addCard(Card _card) {
 
@@ -112,12 +91,22 @@ struct Hand {
 		//comprobamos si tenemos todos los componentes de una cultura
 		if (cultureCompleted(_card.culture))
 		{
-			//Se suman los puntos y borramos estas cartas de la mano
 			points++;
-			PrintHand();
-			removeCard(_card.culture);
+			int aux = MAX_TYPE;
+			while (aux != 0) {
+
+				for (auto i : hand) {
+
+					if (i.culture == _card.culture) {
+						removeCard(i);
+						aux--;
+						break;
+					}
+
+				}
+			}
 
 		}
-		PrintHand();
+		
 	}
 };
