@@ -149,6 +149,8 @@
     <ClInclude Include="TcpSocketSelectorClass.h" />
     <ClInclude Include="TcpStatusClass.h" />
     <ClInclude Include="Types.h" />
+    <ClInclude Include="Timer.h" />
+    <ClInclude Include="Timer %28copia%29.h" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="TcpListener.cpp" />

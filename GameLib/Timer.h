@@ -1,105 +1,19 @@
+
 #pragma once
-#include "Constants.h"
+#include <iostream>
+#include <chrono>
 
-struct Card {
-	static enum class Culture { ARABE, BANTU, CHINA, ESQUIMAL, INDIA, MEXICANA, TIROLESA };
-	static enum class Types { ABUELO, ABUELA, PADRE, MADRE, HIJO, HIJA };
-	Culture culture;
-	Types type;
-	int id;
+class Timer
+{
+private:
+	std::chrono::system_clock::time_point m_start;
+	std::chrono::system_clock::time_point m_end;
+public:
+	Timer();
+	~Timer();
 
-	static const char* ToString(Types t)
-	{
-		switch (t)
-		{
-		case Card::Types::ABUELO:
-			return "ABUELO";
-			break;
-		case Card::Types::ABUELA:
-			return "ABUELA";
-			break;
-		case Card::Types::PADRE:
-			return "PADRE";
-			break;
-		case Card::Types::MADRE:
-			return "MADRE";
-			break;
-		case Card::Types::HIJO:
-			return "HIJO";
-			break;
-		case Card::Types::HIJA:
-			return "HIJA";
-			break;
-		default:
-			return "Unknown";
-			break;
-		}
-
-	}
-	static const char* ToString(Culture c)
-	{
-
-		switch (c)
-		{
-		case Card::Culture::ARABE:
-			return "ARABE";
-			break;
-		case Card::Culture::BANTU:
-			return "BANTU";
-			break;
-		case Card::Culture::CHINA:
-			return "CHINA";
-			break;
-		case Card::Culture::ESQUIMAL:
-			return "ESQUIMAL";
-			break;
-		case Card::Culture::INDIA:
-			return "INDIA";
-			break;
-		case Card::Culture::MEXICANA:
-			return "MEXICANA";
-			break;
-		case Card::Culture::TIROLESA:
-			return "TIROLESA";
-			break;
-		default:
-			return "Unknown";
-			break;
-		}
-	}
-
-	Card(Culture cul, Types typ) {
-
-		culture = cul;
-		type = typ;
-		//Hacemos este algoritmo para que todas tengan un identificador distinto
-
-		id = (int)culture * MAX_CULTURE + (int)type;
-	};
-
+	//Utils functions
+	void ResetTimer();
+	unsigned int GetDuration();
 
 };
-//Si no ponemos inline nos peta
-inline bool operator== (const Card& a, const Card& b)
-{
-	return (a.culture == b.culture && a.type == b.type);
-}
-inline bool operator< (const Card& a, const Card& b)
-{
-	return ((int)a.culture * MAX_CULTURE + (int)a.type) < ((int)b.culture *MAX_TYPE + (int)b.type);
-}
-inline bool operator> (const Card& a, const Card& b)
-{
-	return ((int)a.culture * MAX_CULTURE + (int)a.type) > ((int)b.culture * MAX_TYPE + (int)b.type);
-}inline bool operator<= (const Card& a, const Card& b)
-{
-	return ((int)a.culture * MAX_CULTURE + (int)a.type) < ((int)b.culture *MAX_TYPE + (int)b.type) || (a == b);
-}
-inline bool operator>= (const Card& a, const Card& b)
-{
-	return ((int)a.culture * MAX_CULTURE + (int)a.type) > ((int)b.culture * MAX_TYPE + (int)b.type) || (a == b);
-}
-inline bool operator!= (const Card& a, const Card& b)
-{
-	return !(a == b);
-}

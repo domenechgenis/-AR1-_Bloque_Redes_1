@@ -7,6 +7,7 @@ Client::Client()
 	pl_listener = new TcpListenerClass();
 	pl_socketSelector = new TcpSocketSelectorClass();
 	pl_status = new TcpStatusClass();
+	timer = new Timer();
 }
 
 Client::~Client()
@@ -49,6 +50,9 @@ void Client::Run()
 	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
 	socketselectorListener.detach();
 
+	std::thread CheckPlayerInactivity(&Client::CheckPlayerInactivity, this);
+	CheckPlayerInactivity.detach();
+
 	std::cout << "Mi mano es" << id << std::endl;
 	std::cout << "Cantidad de cartas : "<< hands[id]->numCards<< std::endl;
 	hands[id]->PrintHand();
@@ -68,6 +72,7 @@ void Client::Run()
 	system("cls");
 	//Match Start
 	std::cout << "TODOS LOS JUGADORES HAN SIDO CONECTADOS ESPERANDO A QUE ESTEN LISTOS" << std::endl;
+	timer->ResetTimer();
 
 	while (gameloop)
 	{
@@ -111,7 +116,7 @@ bool Client::ConnectToBBS()
 
 bool Client::OpenListener()
 {
-	//Abrimos el listener y lo añadimos al socket selector para posteriormente recibir los paquetes
+	//Abrimos el listener y lo a?adimos al socket selector para posteriormente recibir los paquetes
 	std::cout << "Me dispongo a escuchar por el puerto " << pl_socket->GetRemoteLocalPort() << std::endl;
 	pl_status->SetStatus(pl_listener->Listen(pl_socket->GetRemoteLocalPort(), sf::IpAddress::LocalHost));
 
@@ -597,14 +602,14 @@ void Client::CreateRoom()
 
 	do 
 	{
-		std::cout << "Quieres introducir contraseña a la partida 0 - Si , 1 - No" << std::endl;
-		std::cout << "Contraseña?: ";
+		std::cout << "Quieres introducir contrase?a a la partida 0 - Si , 1 - No" << std::endl;
+		std::cout << "Contrase?a?: ";
 		std::cin >> npassword;
 
 		if(npassword == 0) // User want password
 		{
-			std::cout << "Introduce la contraseña de la partida: " << std::endl;
-			std::cout << "Contraseña: ";
+			std::cout << "Introduce la contrase?a de la partida: " << std::endl;
+			std::cout << "Contrase?a: ";
 			std::cin >> password;
 		}
 		else if (npassword > 1) // Invalid Key
@@ -623,7 +628,7 @@ void Client::JoinRoom()
 
 void Client::CheckGameHands(sf::Packet& packet, TcpSocketClass* client)
 {
-	//Comprobar que todas las manos estén igual 
+	//Comprobar que todas las manos est?n igual 
 	int aux=0;
 	int _id_receive, numcards,card_id;
 	
@@ -947,6 +952,20 @@ std::string Client::castSwitchToStringType(Family types)
 	case Family::HIJA:
 		return "HIJA";
 	}
+
+
+void Client::CheckPlayerInactivity()
+{
+	while(gameloop)
+	{
+		//If client dont do nothing, lose turn
+		if (timer->GetDuration() == 15) {
+
+			std::cout << "Llevas 15 segundos para hacer el turno, perdiendo el turno.... << std::endl;
+
+		}
+		std::this_thread::sleep_for (std::chrono::seconds(1));
+	}
 }
 
 int Client::castStringToIntCulture(std::string culture) {
@@ -1025,7 +1044,7 @@ void Client::PasarTurno(int _id)
 		if (_id == 3) {
 
 			i.second->playerTurn = 0;
-			//Al acabar la ronda se envia la mano al resto de jugadores para comprobar que no se está cheateando
+			//Al acabar la ronda se envia la mano al resto de jugadores para comprobar que no se est? cheateando
 			SendMyHand();
 		}
 		else {
@@ -1051,12 +1070,11 @@ void Client::PasarTurnoLocal(int _id)
 		else {
 			i.second->playerTurn = _id + 1;
 		}
-
-
 	}
 }
-void Client::FinishGame() {
 
+void Client::FinishGame()
+{
 	//Comprobamos cuantos jugadores hay inGame y los puntos de los jugadores
 
 	int auxIngame=0;

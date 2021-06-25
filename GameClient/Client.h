@@ -12,7 +12,10 @@
 #include "TcpSocket.h"
 #include "TcpListener.h"
 #include "TcpStatusClass.h"
+#include "Timer.h"
+
 #include "TcpSocketSelectorClass.h"
+
 
 #include "Constants.h"
 #include "Types.h"
@@ -29,7 +32,8 @@ class Client
     TcpListenerClass* pl_listener;
     TcpSocketSelectorClass* pl_socketSelector;
     TcpStatusClass * pl_status;
-    Deck *deck;
+    Deck * deck;
+    Timer * timer;
 
     std::map<int, Hand*> hands;
 
@@ -99,4 +103,6 @@ public:
     //Threads
     void SocketSelectorListener();
     void CheckPlayersRdy();
+    void CheckPlayerInactivity();
+    void ChattingActivity();
 };

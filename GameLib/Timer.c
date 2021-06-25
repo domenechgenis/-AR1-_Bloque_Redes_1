@@ -1,27 +1,24 @@
+#include "Timer.h"
 
-#pragma once
-#include <iostream>
-#include <chrono>
-
-class Timer
+Timer::Timer()
 {
-private:
-	std::chrono::system_clock::time_point m_start;
-	std::chrono::system_clock::time_point m_end;
+	m_start = std::chrono::system_clock::now();
+}
 
-	int server_desconnected_times = 0;
+Timer::~Timer()
+{
+}
 
-public:
-	Timer();
-	~Timer();
 
-	//Utils functions
-	void ResetTimer();
-	unsigned int GetDuration();
+void Timer::ResetTimer()
+{
+	m_start = std::chrono::system_clock::now();
+	server_desconnected_times = 0;
+}
 
-	float GetMilisDuration();
-
-	int GetServerDisconnected();
-	void SetServerDisconnected(int);
-
-};
+unsigned int Timer::GetDuration()
+{
+	m_end = std::chrono::system_clock::now();
+	std::chrono::duration<float, std::milli> duration = m_end - m_start;
+	return duration.count() * std::chrono::milliseconds::period::num / std::chrono::milliseconds::period::den;
+}
