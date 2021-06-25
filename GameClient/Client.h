@@ -33,7 +33,7 @@ class Client
     TcpStatusClass * pl_status;
     Deck *deck;
 
-    std::vector<std::string> aMensajes;
+   
 
     std::map<int, Hand*> hands;
 
