@@ -81,6 +81,7 @@ public:
     void UpdateHandsTakeCardFromPlayer(int _id, int _player , Card::Culture _culture, Card::Types _type);
     bool CheckCard(int _playerID , Card::Culture _culture, Card::Types _type);
     void PasarTurno(int _id);
+    void PasarTurnoLocal(int _id);
 
     //In Game Extracted functions
     void ExtractPlayer();
@@ -88,6 +89,12 @@ public:
     void ExtractFamily();
     void CreateRoom();
     void JoinRoom();
+    void FinishGame();
+    int Winner();
+
+    //Cheating
+    void CheckGameHands(sf::Packet& packet, TcpSocketClass* client);
+    void SendMyHand();
 
     //Threads
     void SocketSelectorListener();

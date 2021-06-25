@@ -211,6 +211,9 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 	case MSG_PASSTURN:
 		HandlePassTurnReciever(packet, client);
 		break;
+	case MSG_CHEAT:
+		CheckGameHands(packet, client);
+		break;
 	}
 
 	packet.clear();
@@ -500,17 +503,19 @@ void Client::HandlePlayerTurn()
 
 				Sleep(2000);
 				HandlePlayerTurn();
-
+				FinishGame();
 			}
 			else {
 
 				std::cout << "Has fallado , pierdes el turno" << std::endl;
-				Sleep(1000);
+				
 
 				//enviar paquete de cambio de turno
 				HandlePlayerBadDecision();
 				//Actualizamos en local el turno 
 				PasarTurno(id);
+				FinishGame();
+				Sleep(5000);
 
 			}
 
@@ -518,6 +523,7 @@ void Client::HandlePlayerTurn()
 		else {
 			HandlePlayerBadDecision();
 			PasarTurno(id);
+			Sleep(5000);
 		}
 		
 	}
@@ -613,6 +619,80 @@ void Client::JoinRoom()
 {
 	std::cout << "-------------------------------------------------------------------------------" << std::endl;
 	std::cout << "Salas Disponibles: " << std::endl;
+}
+
+void Client::CheckGameHands(sf::Packet& packet, TcpSocketClass* client)
+{
+	//Comprobar que todas las manos estén igual 
+	int aux=0;
+	int _id_receive, numcards,card_id;
+	
+
+	packet >> _id_receive;
+	packet >> numcards;
+
+	if (numcards != hands[_id_receive]->numCards) {
+		//Eres un chiter
+	}
+	else {
+
+		for (size_t i = 0; i < numcards; i++) {
+			packet >> card_id;
+			for (size_t j = 0; j < numcards; j++) {
+
+				if (card_id == hands[_id_receive]->hand[j].id) {
+					aux++;
+					break;
+				}
+
+			}
+
+		}
+
+		if (aux==numcards) {
+
+			std::cout<<"EL JUGADOR "<<_id_receive << " TIENE TODO OK \n";
+
+		}
+		else {
+
+			std::cout <<"JUGADOR "<< _id_receive << "...ERES UN CHEATER DE MIERDA \n";
+		}
+
+	}
+
+
+
+}
+
+void Client::SendMyHand()
+{
+	sf::Packet packet;
+
+	for (auto const& i : pl_clients)
+	{
+		packet << HEADER_MSG::MSG_CHEAT << id<< hands[id]->numCards;
+
+	
+
+		for (size_t i = 0;i < hands[id]->numCards;i++) {
+			packet << hands[id]->hand[i].id;
+		}
+		//Se actualiza hands en el jugador actual;
+
+		pl_status->SetStatus(i->Send(packet));
+
+		if (pl_status->GetStatus() == sf::Socket::Done)
+		{
+			std::cout << "El paquete se ha enviado correctamente\n";
+			packet.clear();
+		}
+		else
+		{
+			std::cout << "El paquete no se ha podido enviar\n";
+		}
+
+	}
 }
 
 void Client::HandlePlayerGoodDecision() 
@@ -945,6 +1025,8 @@ void Client::PasarTurno(int _id)
 		if (_id == 3) {
 
 			i.second->playerTurn = 0;
+			//Al acabar la ronda se envia la mano al resto de jugadores para comprobar que no se está cheateando
+			SendMyHand();
 		}
 		else {
 			i.second->playerTurn = _id + 1;
@@ -952,10 +1034,74 @@ void Client::PasarTurno(int _id)
 		
 
 	}
-	
 
 }
 
+void Client::PasarTurnoLocal(int _id)
+{
+	for (auto i : hands) {
+
+
+
+		if (_id == 3) {
+
+			i.second->playerTurn = 0;
+
+		}
+		else {
+			i.second->playerTurn = _id + 1;
+		}
+
+
+	}
+}
+void Client::FinishGame() {
+
+	//Comprobamos cuantos jugadores hay inGame y los puntos de los jugadores
+
+	int auxIngame=0;
+	int sumFamCompleted = 0;
+
+	for (auto i : hands) {
+		if (i.second->inGame) {
+			auxIngame++;
+		}
+		sumFamCompleted += i.second->points;
+	}
+
+	if (auxIngame<=2){
+
+		std::cout << "\nSe ha terminado la partida porque solo quedan 2 jugadores\n" << std::endl;
+
+		std::cout << "\nEl ganador es el jugador : " <<Winner()<< std::endl;
+		Sleep(100000);
+
+	}
+	else if (sumFamCompleted == MAX_CULTURE){
+		std::cout << "\nSe ha terminado la partida porque todas las familias se han completado\n" << std::endl;
+
+		std::cout << "\nEl ganador es el jugador : " << Winner() << std::endl;
+
+		Sleep(100000);
+	}
+
+
+}
+
+int Client::Winner()
+{
+	int _id_winner;
+	int points = 0;
+
+	for (auto i : hands) {
+		if (i.second->points > points) {
+			points = i.second->points;
+			_id_winner = i.first;
+		}
+	}
+	return _id_winner;
+
+}
 
 
 
