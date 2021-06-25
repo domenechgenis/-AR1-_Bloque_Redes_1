@@ -8,6 +8,8 @@
 #include <map>
 #include <windows.h>
 #include <algorithm>
+#include <SFML\Graphics.hpp>
+#include <string>
 
 #include "TcpSocket.h"
 #include "TcpListener.h"
@@ -30,6 +32,8 @@ class Client
     TcpSocketSelectorClass* pl_socketSelector;
     TcpStatusClass * pl_status;
     Deck *deck;
+
+    std::vector<std::string> aMensajes;
 
     std::map<int, Hand*> hands;
 
@@ -99,4 +103,8 @@ public:
     //Threads
     void SocketSelectorListener();
     void CheckPlayersRdy();
+
+
+    //Chat 
+    void ChatSoloUno();
 };

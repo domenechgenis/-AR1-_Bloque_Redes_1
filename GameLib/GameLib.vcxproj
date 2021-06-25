@@ -151,6 +151,7 @@
     <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="CodigoChat1solo.cpp" />
     <ClCompile Include="TcpListener.cpp" />
     <ClCompile Include="TcpSocket.cpp" />
     <ClCompile Include="TcpSocketSelectorClass.cpp" />
