@@ -33,7 +33,7 @@ class Client
     TcpStatusClass * pl_status;
     Deck *deck;
 
-   
+    std::vector<std::string> aMensajes;
 
     std::map<int, Hand*> hands;
 
@@ -86,6 +86,7 @@ public:
     bool CheckCard(int _playerID , Card::Culture _culture, Card::Types _type);
     void PasarTurno(int _id);
     void PasarTurnoLocal(int _id);
+    std::string SwitchChat(int mesDes, int mesOpt);
 
     //In Game Extracted functions
     void ExtractPlayer();
@@ -107,4 +108,6 @@ public:
 
     //Chat 
     void ChatSoloUno();
+    void SendChat(int mDest,int option);
+    void ReceiveChat(sf::Packet& packet, TcpSocketClass* client);
 };

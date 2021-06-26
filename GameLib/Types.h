@@ -15,6 +15,8 @@ enum HEADER_MSG
 	MSG_TURN,
 	MSG_PASSTURN,
 	MSG_CHEAT,
+	MSG_CHAT,
+
 };
 
 enum Culture 
