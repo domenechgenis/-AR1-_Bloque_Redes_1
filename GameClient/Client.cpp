@@ -624,6 +624,22 @@ void Client::CreateRoom()
 		}
 
 	} while (npassword > 1);
+
+	//Construir el paquete para informar al servidor que queremos crear una partida
+	sf::Packet packet;
+	packet << room << npassword << password;
+
+	//When packet its ready, send it to connected user
+	this->pl_status->SetStatus(pl_socket->Send(packet));
+
+	if (pl_status->GetStatus() == sf::Socket::Done)
+	{
+		std::cout << "El paquete se ha enviado correctamente\n";
+		packet.clear();
+	}
+	else {
+		std::cout << "El paquete no se ha podido enviar\n";
+	}
 }
 
 void Client::JoinRoom()
@@ -1046,6 +1062,7 @@ void Client::PasarTurno(int _id)
 		if (_id == 3) 
 		{
 			i.second->playerTurn = 0;
+
 			//Al acabar la ronda se envia la mano al resto de jugadores para comprobar que no se está cheateando
 			SendMyHand();
 		}
