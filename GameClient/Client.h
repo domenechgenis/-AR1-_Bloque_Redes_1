@@ -20,6 +20,7 @@
 #include "Types.h"
 #include "Deck.h"
 #include "Hand.h"
+#include "Timer.h"
 
 class Client
 {
@@ -31,7 +32,8 @@ class Client
     TcpListenerClass* pl_listener;
     TcpSocketSelectorClass* pl_socketSelector;
     TcpStatusClass * pl_status;
-    Deck *deck;
+    Deck * deck;
+    Timer * timer;
 
     std::vector<std::string> aMensajes;
 
@@ -104,7 +106,7 @@ public:
     //Threads
     void SocketSelectorListener();
     void CheckPlayersRdy();
-
+    void TurnTimerChecker();
 
     //Chat 
     void ChatSoloUno();

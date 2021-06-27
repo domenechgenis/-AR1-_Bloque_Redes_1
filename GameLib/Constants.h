@@ -7,6 +7,7 @@ static const int DEFAULT_SLEEP = 1000;
 
 static int MAX_CULTURE = 7;
 static int MAX_TYPE = 6;
+static int LOSE_TURN_TIME = 30;
 
 
 

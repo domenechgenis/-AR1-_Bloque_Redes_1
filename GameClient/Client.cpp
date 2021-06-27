@@ -15,6 +15,7 @@ Client::~Client()
 	delete[] pl_listener;
 	delete[] pl_socketSelector;
 	delete[] pl_status;
+	delete[] timer;
 }
 
 void Client::Run()
@@ -49,7 +50,9 @@ void Client::Run()
 	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
 	socketselectorListener.detach();
 
-
+	//Turn timer check
+	std::thread turnTimerCheck(&Client::TurnTimerChecker, this);
+	turnTimerCheck.detach();
 	
 
 	std::cout << "Mi mano es" << id << std::endl;
@@ -828,6 +831,20 @@ void Client::CheckPlayersRdy()
 
 		std::cout << "----------------------------------------------------------" << std::endl;
 		std::this_thread::sleep_for(std::chrono::milliseconds(DEFAULT_SLEEP));
+	}
+}
+
+void Client::TurnTimerChecker()
+{
+	while (gameloop)
+	{
+		std::cout << "Mi turno esta durando " << timer->GetDuration() << "/" << LOSE_TURN_TIME << std::endl;
+		if (timer->GetDuration() > LOSE_TURN_TIME)
+		{
+			std::cout << "Has perdido el turno por tardar demasiado" << std::endl;
+		}
+
+		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 }
 

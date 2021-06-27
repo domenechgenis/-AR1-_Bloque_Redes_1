@@ -148,6 +148,7 @@
     <ClInclude Include="TcpSocket.h" />
     <ClInclude Include="TcpSocketSelectorClass.h" />
     <ClInclude Include="TcpStatusClass.h" />
+    <ClInclude Include="Timer.h" />
     <ClInclude Include="Types.h" />
   </ItemGroup>
   <ItemGroup>
@@ -156,6 +157,7 @@
     <ClCompile Include="TcpSocket.cpp" />
     <ClCompile Include="TcpSocketSelectorClass.cpp" />
     <ClCompile Include="TcpStatusClass.cpp" />
+    <ClCompile Include="Timer.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
