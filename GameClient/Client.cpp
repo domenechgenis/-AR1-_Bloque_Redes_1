@@ -7,6 +7,7 @@ Client::Client()
 	pl_listener = new TcpListenerClass();
 	pl_socketSelector = new TcpSocketSelectorClass();
 	pl_status = new TcpStatusClass();
+	timer = new Timer();
 }
 
 Client::~Client()
@@ -1062,10 +1063,7 @@ void Client::PasarTurno(int _id)
 		else {
 			i.second->playerTurn = _id + 1;
 		}
-		
-
 	}
-
 }
 
 void Client::PasarTurnoLocal(int _id)
