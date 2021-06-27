@@ -51,11 +51,6 @@ void Client::Run()
 	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
 	socketselectorListener.detach();
 
-	//Turn timer check
-	std::thread turnTimerCheck(&Client::TurnTimerChecker, this);
-	turnTimerCheck.detach();
-	
-
 	std::cout << "Mi mano es" << id << std::endl;
 	std::cout << "Cantidad de cartas : "<< hands[id]->numCards<< std::endl;
 	hands[id]->PrintHand();
@@ -803,6 +798,10 @@ void Client::CheckPlayersRdy()
 
 			gamestarded = true;
 
+			//Turn timer check
+			std::thread turnTimerCheck(&Client::TurnTimerChecker, this);
+			turnTimerCheck.detach();
+
 			//Send Respective turns to each player
 			if (id == hands[0]->playerTurn)
 			{
@@ -837,12 +836,17 @@ void Client::CheckPlayersRdy()
 
 void Client::TurnTimerChecker()
 {
-	while (gameloop)
+	while (gamestarded)
 	{
-		std::cout << "Mi turno esta durando " << timer->GetDuration() << "/" << LOSE_TURN_TIME << std::endl;
 		if (timer->GetDuration() > LOSE_TURN_TIME)
 		{
-			std::cout << "Has perdido el turno por tardar demasiado" << std::endl;
+			//enviar paquete de cambio de turno
+			HandlePlayerBadDecision();
+
+			//Actualizamos en local el turno 
+			PasarTurno(id);
+			FinishGame();
+			Sleep(5000);
 		}
 
 		std::this_thread::sleep_for(std::chrono::seconds(1));
@@ -860,20 +864,8 @@ void Client::ExtractPlayer()
 		std::cout << "Jugador " <<i->GetId() << " - " << i->GetRemotePort() << std::endl;
 	}
 
-	//do
-	//{
-		std::cout << "A que jugador de los anteriores quieres coger una carta?  ";
-	
-		std::cin >> player;
-
-		//Esto cambiarlo sino la logica no funciona
-		/*if (player > 2 || player <0)
-		{
-			std::cout << "\nJugador no disponible" << std::endl;
-		}
-		*/
-
-	//} while (player > 2 || player < 0);
+	std::cout << "A que jugador de los anteriores quieres coger una carta?  ";
+	std::cin >> player;
 
 	std::cout << "--------------------------------------------------" << std::endl;
 }
@@ -1007,22 +999,28 @@ int Client::castStringToIntCulture(std::string culture) {
 
 int Client::castStringToIntType(std::string types) {
 
-	if (types == "ABUELO") {
+	if (types == "ABUELO") 
+	{
 		return 0;
 	}
-	else if (types == "ABUELA") {
+	else if (types == "ABUELA")
+	{
 		return 1;
 	}
-	else if (types == "PADRE") {
+	else if (types == "PADRE")
+	{
 		return 2;
 	}
-	else if (types == "MADRE") {
+	else if (types == "MADRE")
+	{
 		return 3;
 	}
-	else if (types == "HIJO") {
+	else if (types == "HIJO")
+	{
 		return 4;
 	}
-	else if (types == "HIJA") {
+	else if (types == "HIJA") 
+	{
 		return 5;
 	}
 }
@@ -1030,15 +1028,8 @@ int Client::castStringToIntType(std::string types) {
 void Client::UpdateHandsTakeCardFromPlayer(int _id, int _player, Card::Culture _culture, Card::Types _type)
 {
 	Card *_newCard = new Card(_culture, _type);
-
-	//Añadir std cout
-
 	hands[_id]->addCard(*_newCard);
-
-
 	hands[_player]->removeCard(*_newCard);
-	
-	
 }
 
 bool Client::CheckCard(int _playerID, Card::Culture _culture, Card::Types _type)
@@ -1050,17 +1041,16 @@ bool Client::CheckCard(int _playerID, Card::Culture _culture, Card::Types _type)
 
 void Client::PasarTurno(int _id)
 {
-	for (auto i : hands ) {
-
-		
-
-		if (_id == 3) {
-
+	for (auto i : hands )
+	{
+		if (_id == 3) 
+		{
 			i.second->playerTurn = 0;
 			//Al acabar la ronda se envia la mano al resto de jugadores para comprobar que no se está cheateando
 			SendMyHand();
 		}
-		else {
+		else 
+		{
 			i.second->playerTurn = _id + 1;
 		}
 	}
@@ -1068,60 +1058,49 @@ void Client::PasarTurno(int _id)
 
 void Client::PasarTurnoLocal(int _id)
 {
-	for (auto i : hands) {
-
-
-
-		if (_id == 3) {
-
+	for (auto i : hands)
+	{
+		if (_id == 3) 
+		{
 			i.second->playerTurn = 0;
-
 		}
-		else {
+		else 
+		{
 			i.second->playerTurn = _id + 1;
 		}
-
-
 	}
 }
 
-void Client::FinishGame() {
+void Client::FinishGame() 
+{
+	int auxIngame=0,sumFamCompleted = 0;
 
-	//Comprobamos cuantos jugadores hay inGame y los puntos de los jugadores
-
-	int auxIngame=0;
-	int sumFamCompleted = 0;
-
-	for (auto i : hands) {
-		if (i.second->inGame) {
+	for (auto i : hands)
+	{
+		if (i.second->inGame) 
+		{
 			auxIngame++;
 		}
 		sumFamCompleted += i.second->points;
 	}
 
-	if (auxIngame<=2){
-
+	if (auxIngame<=2)
+	{
 		std::cout << "\nSe ha terminado la partida porque solo quedan 2 jugadores\n" << std::endl;
-
 		std::cout << "\nEl ganador es el jugador : " <<Winner()<< std::endl;
 		Sleep(100000);
-
 	}
-	else if (sumFamCompleted == MAX_CULTURE){
+	else if (sumFamCompleted == MAX_CULTURE)
+	{
 		std::cout << "\nSe ha terminado la partida porque todas las familias se han completado\n" << std::endl;
-
 		std::cout << "\nEl ganador es el jugador : " << Winner() << std::endl;
-
 		Sleep(100000);
 	}
-
-
 }
 
 int Client::Winner()
 {
-	int _id_winner;
-	int points = 0;
+	int _id_winner = 0, points = 0;
 
 	for (auto i : hands) {
 		if (i.second->points > points) {
@@ -1130,7 +1109,6 @@ int Client::Winner()
 		}
 	}
 	return _id_winner;
-
 }
 
 
@@ -1249,18 +1227,14 @@ void Client::ChatSoloUno()
 		window.display();
 		window.clear();
 	}
-
-
-
 }
 
 void Client::SendChat(int mDest, int option)
 {
-
 	sf::Packet packet;
 
-	if(mDest == 4) {//Todos
-
+	if(mDest == 4)
+	{
 		for (auto const& i : pl_clients)
 		{
 			packet << HEADER_MSG::MSG_CHAT << 4 << option;
@@ -1276,13 +1250,11 @@ void Client::SendChat(int mDest, int option)
 			{
 				std::cout << "El paquete no se ha podido enviar\n";
 			}
-
 		}
-
 	}
-	else {
+	else 
+	{
 		packet << HEADER_MSG::MSG_CHAT << id << option;
-
 		for (auto const& i : pl_clients)
 		{
 			if (i->GetId() == mDest) {
@@ -1296,15 +1268,10 @@ void Client::SendChat(int mDest, int option)
 				{
 					std::cout << "El paquete no se ha podido enviar\n";
 				}
-
 				break;
 			}
 		}
 	}
-
-
-	
-
 }
 
 std::string Client::SwitchChat(int mesDes, int mesOpt)
@@ -1401,17 +1368,14 @@ std::string Client::SwitchChat(int mesDes, int mesOpt)
 	
 	return mensaje;
 }
+
 void Client::ReceiveChat(sf::Packet& packet, TcpSocketClass* client)
 {
-
 	int _id_receive, option;
-
-
 	packet >> _id_receive;
 	packet >> option;
 
 	aMensajes.push_back(SwitchChat(_id_receive, option));
-
 }
 
 
