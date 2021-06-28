@@ -15,6 +15,7 @@ class Server
 private:
 	//Data structure
 	std::list<TcpSocketClass*> sv_clients;
+	std::vector<RoomInfo> rooms;
 
 	//Utils
 	TcpSocketClass* sv_socket;
@@ -28,6 +29,7 @@ private:
 	void OpenListener();
 	void DisconnectServer();
 	void SendPackets(sf::TcpSocket&);
+	void RecieveRoom(sf::TcpSocket&);
 
 public:
 	Server();

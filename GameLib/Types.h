@@ -1,8 +1,15 @@
 #pragma once
 
-struct PlayerInfo {
+struct PlayerInfo
+{
 	TcpSocketClass socket;
 	bool isRdy;
+};
+
+struct RoomInfo 
+{
+	std::string room,password;
+	int npassowrd;
 };
 
 enum HEADER_MSG

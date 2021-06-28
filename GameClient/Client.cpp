@@ -253,10 +253,9 @@ void Client::HandleTurnReciever(sf::Packet& packet, TcpSocketClass* client)
 	
 	//Entra aqui por la cara por esto esta estwe "fix" hecho
 
-	if (id_recieved >= 0 && id_recieved <= 3 ) {
-
+	if (id_recieved >= 0 && id_recieved <= 3 )
+	{
 		UpdateHandsTakeCardFromPlayer(id_recieved, player_recieved, (Card::Culture)culture_recieved, (Card::Types)family_recieved);
-
 	}
 
 
@@ -264,19 +263,13 @@ void Client::HandleTurnReciever(sf::Packet& packet, TcpSocketClass* client)
 void Client::HandlePassTurnReciever(sf::Packet& packet, TcpSocketClass* client)
 {
 	int id_recieved;
-
 	packet >> id_recieved;
 
-
 	//Entra aqui por la cara por esto esta estwe "fix" hecho
-
-	if (id_recieved >= 0 && id_recieved <= 3) {
-
+	if (id_recieved >= 0 && id_recieved <= 3) 
+	{
 		PasarTurno(id_recieved);
-
 	}
-
-
 }
 
 void Client::Wait4ServerPacket()
@@ -598,7 +591,7 @@ void Client::CreateOrJoinRoom()
 void Client::CreateRoom()
 {
 	std::string room, password;
-	int npassword;
+	int npassword,decision;
 
 	std::cout << "-------------------------------------------------------------------------------" << std::endl;
 
@@ -615,7 +608,7 @@ void Client::CreateRoom()
 		if(npassword == 0) // User want password
 		{
 			std::cout << "Introduce la contraseña de la partida: " << std::endl;
-			std::cout << "Contraseña: ";
+			std::cout << "Contrasena: ";
 			std::cin >> password;
 		}
 		else if (npassword > 1) // Invalid Key
@@ -625,16 +618,19 @@ void Client::CreateRoom()
 
 	} while (npassword > 1);
 
+	std::cout << "\n-------------------------------------------------------------------------------" << std::endl;
+
 	//Construir el paquete para informar al servidor que queremos crear una partida
 	sf::Packet packet;
-	packet << room << npassword << password;
+	decision = 0;
+	packet << decision << room << npassword << password;
 
 	//When packet its ready, send it to connected user
 	this->pl_status->SetStatus(pl_socket->Send(packet));
 
 	if (pl_status->GetStatus() == sf::Socket::Done)
 	{
-		std::cout << "El paquete se ha enviado correctamente\n";
+		std::cout << "La partida se ha creado correctamente\n";
 		packet.clear();
 	}
 	else {
@@ -651,45 +647,38 @@ void Client::JoinRoom()
 void Client::CheckGameHands(sf::Packet& packet, TcpSocketClass* client)
 {
 	//Comprobar que todas las manos estén igual 
-	int aux=0;
-	int _id_receive, numcards,card_id;
+	int aux=0,_id_receive,numcards,card_id;
 	
-
 	packet >> _id_receive;
 	packet >> numcards;
 
-	if (numcards != hands[_id_receive]->numCards) {
-		//Eres un chiter
+	if (numcards != hands[_id_receive]->numCards)
+	{
+		std::cout << "CHEATER!" << std::endl;
 	}
 	else {
 
-		for (size_t i = 0; i < numcards; i++) {
+		for (size_t i = 0; i < numcards; i++)
+		{
 			packet >> card_id;
-			for (size_t j = 0; j < numcards; j++) {
-
-				if (card_id == hands[_id_receive]->hand[j].id) {
+			for (size_t j = 0; j < numcards; j++)
+			{
+				if (card_id == hands[_id_receive]->hand[j].id)
+				{
 					aux++;
 					break;
 				}
-
 			}
-
 		}
-
-		if (aux==numcards) {
-
+		if (aux==numcards)
+		{
 			std::cout<<"EL JUGADOR "<<_id_receive << " TIENE TODO OK \n";
-
 		}
-		else {
-
+		else 
+		{
 			std::cout <<"EL JUGADOR "<< _id_receive << "...ERES UN CHEATER \n";
 		}
-
 	}
-
-
-
 }
 
 void Client::SendMyHand()
@@ -856,15 +845,14 @@ void Client::TurnTimerChecker()
 	{
 		if (timer->GetDuration() > LOSE_TURN_TIME)
 		{
-			//enviar paquete de cambio de turno
-			HandlePlayerBadDecision();
+			////enviar paquete de cambio de turno
+			//HandlePlayerBadDecision();
 
-			//Actualizamos en local el turno 
-			PasarTurno(id);
-			FinishGame();
-			Sleep(5000);
+			////Actualizamos en local el turno 
+			//PasarTurno(id);
+			//FinishGame();
+			//Sleep(5000);
 		}
-
 		std::this_thread::sleep_for(std::chrono::seconds(1));
 	}
 }
@@ -1127,7 +1115,6 @@ int Client::Winner()
 	}
 	return _id_winner;
 }
-
 
 void Client::ChatSoloUno()
 {

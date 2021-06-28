@@ -39,8 +39,12 @@ void Server::Run()
 				{
 					std::cout << "Connexion recibia del cliente: " << sv_socket->GetRemotePort() << std::endl;
 
+					//Recieve Room
+					RecieveRoom(*sv_socket->GetSocket());
+
 					//Le enviamos la informacion a los jugadores
 					SendPackets(*sv_socket->GetSocket());
+
 					// Add the new client to the selector so that we will
 					// be notified when he sends something
 					sv_socketselector->Add(sv_socket->GetSocket());
@@ -50,7 +54,8 @@ void Server::Run()
 
 					
 				}
-				else {
+				else
+				{
 					delete sv_socket;
 					std::cout << "Error al recibir un player\n";
 					DisconnectServer();
@@ -121,5 +126,40 @@ void Server::SendPackets(sf::TcpSocket& socket)
 	}
 	else {
 		std::cout << "El paquete no se ha podido enviar\n";
+	}
+}
+
+void Server::RecieveRoom(sf::TcpSocket& socket)
+{
+	sf::Packet packet;
+
+	std::string room, password;
+	int npassword,decision;
+	packet >> decision;
+
+
+	std::cout << "-------------------------------------------------------------------------------" << std::endl;
+
+	sv_status->SetStatus(socket.receive(packet));
+	packet >> decision;
+
+	if(decision == 0)
+	{
+		if (sv_status->GetStatus() == sf::Socket::Done)
+		{
+			RoomInfo info;
+
+			packet >> room;
+			info.room = room;
+
+			packet >> npassword;
+			info.npassowrd = npassword;
+
+			packet >> password;
+			info.password = password;
+
+			std::cout << "Creando una sala con nombre: " << room << " " << npassword << " " << password << std::endl;
+		}
+		std::cout << "-------------------------------------------------------------------------------" << std::endl;
 	}
 }
