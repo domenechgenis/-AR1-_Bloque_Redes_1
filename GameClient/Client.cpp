@@ -12,6 +12,7 @@ Client::Client()
 
 Client::~Client()
 {
+	//Free memory
 	delete[] pl_socket;
 	delete[] pl_listener;
 	delete[] pl_socketSelector;
@@ -35,6 +36,7 @@ void Client::Run()
 	//Wait4ServerPackets
 	Wait4ServerPacket();
 
+	//Show Players
 	ShowCurrentPlayers();
 
 	//Listen to players connected
@@ -44,28 +46,13 @@ void Client::Run()
 	system("cls");
 	AssignDeck();
 
+	//Assign Hands and turn
 	AsignHandsAndTurn();
 	DealCards();
 
-	//Listener thread
+	//Listener thread - Main Reciev
 	std::thread socketselectorListener(&Client::SocketSelectorListener, this);
 	socketselectorListener.detach();
-
-	std::cout << "Mi mano es" << id << std::endl;
-	std::cout << "Cantidad de cartas : "<< hands[id]->numCards<< std::endl;
-	hands[id]->PrintHand();
-	std::cout <<"--------------------------------------------------"<< std::endl;
-
-	std::cout << "Manos de los otros : "<< std::endl;
-	for (int i = 0; i < 4; i++)
-	{
-		if (i != id)
-		{
-			std::cout << "Cantidad de cartas : " << hands[i]->numCards << std::endl;
-			std::cout << "La mano del jugador  " << i << " es:" << std::endl;
-			hands[i]->PrintHand();
-		}
-	}
 
 	system("cls");
 	//Match Start
@@ -196,14 +183,6 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 	
 	switch (header)
 	{
-	case MSG_NULL:
-		break;
-	case MSG_OK:
-		break;
-	case MSG_KO:
-		break;
-	case MSG_PEERS:
-		break;
 	case MSG_RDY:
 		HandleRdyReciever(packet,client);
 		break;
@@ -219,7 +198,6 @@ void Client::HandlePacketReciever(sf::Packet& packet, TcpSocketClass* client)
 	case MSG_CHAT:
 		ReceiveChat(packet, client);
 		break;
-
 	}
 
 	packet.clear();
@@ -250,22 +228,16 @@ void Client::HandleTurnReciever(sf::Packet& packet, TcpSocketClass* client)
 	
 	packet >> family_recieved;
 
-	
-	//Entra aqui por la cara por esto esta estwe "fix" hecho
-
 	if (id_recieved >= 0 && id_recieved <= 3 )
 	{
 		UpdateHandsTakeCardFromPlayer(id_recieved, player_recieved, (Card::Culture)culture_recieved, (Card::Types)family_recieved);
 	}
-
-
 }
 void Client::HandlePassTurnReciever(sf::Packet& packet, TcpSocketClass* client)
 {
 	int id_recieved;
 	packet >> id_recieved;
 
-	//Entra aqui por la cara por esto esta estwe "fix" hecho
 	if (id_recieved >= 0 && id_recieved <= 3) 
 	{
 		PasarTurno(id_recieved);
@@ -392,7 +364,8 @@ void Client::Wait4Rdy()
 					std::cout << "El paquete se ha enviado correctamente\n";
 					packet.clear();
 				}
-				else {
+				else 
+				{
 					std::cout << "El paquete no se ha podido enviar\n";
 				}
 			}
@@ -509,42 +482,39 @@ void Client::HandlePlayerTurn()
 				HandlePlayerTurn();
 				FinishGame();
 			}
-			else {
-
+			else 
+			{
 				std::cout << "Has fallado , pierdes el turno" << std::endl;
 				
-
 				//enviar paquete de cambio de turno
 				HandlePlayerBadDecision();
 				//Actualizamos en local el turno 
 				PasarTurno(id);
 				FinishGame();
 				Sleep(5000);
-
 			}
-
 		}
-		else {
+		else 
+		{
 			HandlePlayerBadDecision();
 			PasarTurno(id);
 			Sleep(5000);
 		}
-		
 	}
 	else
 	{
-
-		if (!hands[id]->inGame) {
-
+		if (!hands[id]->inGame)
+		{
 			system("cls");
 			std::cout << "Soy el jugador: " << id <<"  y estoy en modo espectador\n" <<std::endl;
-
 			std::cout << "Puntuaciones: \n" << std::endl;
-			for (auto i : hands) {
+			for (auto i : hands) 
+			{
 				std::cout << "Jugador" << i.first << ":" << i.second->points << std::endl;
 			}
 		}
-		else {
+		else 
+		{
 			system("cls");
 			std::cout << "Soy el jugador: " << id << std::endl;
 			std::cout << "Esta es tu mano actual:" << std::endl;
@@ -557,8 +527,6 @@ void Client::HandlePlayerTurn()
 				std::cout << "Jugador" << i.first << ":" << i.second->points << std::endl;
 			}
 		}
-		
-
 		Sleep(2000);
 	}
 }
@@ -640,8 +608,38 @@ void Client::CreateRoom()
 
 void Client::JoinRoom()
 {
+	//Construir el paquete para informar al servidor que queremos crear una partida
+	sf::Packet packet;
+	std::string room = "Carmen123";
+	int decision = 1;
+	packet << decision;
+
+	//When packet its ready, send it to connected user
+	this->pl_status->SetStatus(pl_socket->Send(packet));
+
+	if (pl_status->GetStatus() == sf::Socket::Done)
+	{
+		std::cout << "Paquetete enviado correctamente\n";
+		packet.clear();
+	}
+	else 
+	{
+		std::cout << "El paquete no se ha podido enviar\n";
+	}
+
+	//Recieve rooms
+
+	pl_status->SetStatus(pl_socket->Recieve(packet));
+
+	if (pl_status->GetStatus() == sf::Socket::Done)
+	{
+		packet >> room;
+		std::cout << "-------------------------------------------------------------------------------" << std::endl;
+		std::cout << "Salas Disponibles: " << std::endl;
+		std::cout << "1 - : " << room << std::endl;
+	}
+
 	std::cout << "-------------------------------------------------------------------------------" << std::endl;
-	std::cout << "Salas Disponibles: " << std::endl;
 }
 
 void Client::CheckGameHands(sf::Packet& packet, TcpSocketClass* client)
@@ -689,9 +687,8 @@ void Client::SendMyHand()
 	{
 		packet << HEADER_MSG::MSG_CHEAT << id<< hands[id]->numCards;
 
-	
-
-		for (size_t i = 0;i < hands[id]->numCards;i++) {
+		for (size_t i = 0;i < hands[id]->numCards;i++) 
+		{
 			packet << hands[id]->hand[i].id;
 		}
 		//Se actualiza hands en el jugador actual;
@@ -713,8 +710,6 @@ void Client::SendMyHand()
 
 void Client::HandlePlayerGoodDecision() 
 {
-
-
 	sf::Packet packet;
 
 	for (auto const& i : pl_clients) 
@@ -734,15 +729,11 @@ void Client::HandlePlayerGoodDecision()
 		{
 			std::cout << "El paquete no se ha podido enviar\n";
 		}
-
 	}
-	
-
-	
 }
+
 void Client::HandlePlayerBadDecision()
 {
-
 	sf::Packet packet;
 
 	for (auto const& i : pl_clients)
@@ -857,7 +848,6 @@ void Client::TurnTimerChecker()
 	}
 }
 
-
 void Client::ExtractPlayer()
 {
 	int j = 0;
@@ -923,16 +913,16 @@ std::string Client::HeaderToString(HEADER_MSG header)
 {
 	switch (header)
 	{
-	case MSG_NULL:
-		return "MSG_NULL";
-	case MSG_OK:
-		return "MSG_OK";
-	case MSG_KO:
-		return "MSG_KO";
-	case MSG_PEERS:
-		return "MSG_PEERS";
+	case MSG_RDY:
+		return "MSG_RDY";
 	case MSG_TURN:
 		return "MSG_TURN";
+	case MSG_PASSTURN:
+		return "MSG_PASSTURN";
+	case MSG_CHEAT:
+		return "MSG_CHEAT";
+	case MSG_CHAT:
+		return "MSG_CHAT";
 	}
 }
 

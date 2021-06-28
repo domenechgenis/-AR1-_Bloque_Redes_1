@@ -11,6 +11,7 @@ Server::Server()
 
 Server::~Server()
 {
+	//Free Memory
 	delete[] sv_socket;
 	delete[] sv_listener;
 	delete[] sv_socketselector;
@@ -51,8 +52,6 @@ void Server::Run()
 
 					//Add to client server
 					sv_clients.push_back(sv_socket);
-
-					
 				}
 				else
 				{
@@ -67,6 +66,7 @@ void Server::Run()
 
 void Server::OpenListener()
 {
+	//Connect server to default port
 	sv_status->SetStatus(sv_listener->Listen(DEFAULT_PORT,sf::IpAddress::LocalHost));
 
 	if (sv_status->GetStatus() != sf::Socket::Done)
@@ -131,6 +131,7 @@ void Server::SendPackets(sf::TcpSocket& socket)
 
 void Server::RecieveRoom(sf::TcpSocket& socket)
 {
+	//Raecieve client decision
 	sf::Packet packet;
 
 	std::string room, password;
@@ -157,9 +158,21 @@ void Server::RecieveRoom(sf::TcpSocket& socket)
 
 			packet >> password;
 			info.password = password;
+			rooms.push_back(info);
 
 			std::cout << "Creando una sala con nombre: " << room << " " << npassword << " " << password << std::endl;
 		}
 		std::cout << "-------------------------------------------------------------------------------" << std::endl;
+	}
+	else 
+	{
+		std::cout << "El jugador quiere ver las salas disponibles " << std::endl;
+		packet.clear();
+
+		packet << this->rooms[0].room;
+
+		//When packet its ready, send it to connected user
+		this->sv_status->SetStatus(sv_socket->Send(packet));
+
 	}
 }
